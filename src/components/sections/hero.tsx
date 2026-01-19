@@ -28,7 +28,7 @@ export function HeroSection() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                            <Link href="/onboarding/business-info">
+                            <Link href="/onboarding/account-setup">
                                 <Button size="lg" className="bg-white text-primary hover:bg-gray-100 font-semibold h-14 px-8 w-full sm:w-auto">
                                     Start Free Trial
                                 </Button>
@@ -55,12 +55,40 @@ export function HeroSection() {
                             <div className="rounded-lg bg-white/95 aspect-[4/3] flex items-center justify-center relative overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-200"></div>
                                
-                                <div className="absolute top-4 left-4 right-4 h-8 bg-white rounded shadow-sm"></div>
-                                <div className="absolute top-16 left-4 right-1/2 h-24 bg-white rounded shadow-sm"></div>
-                                <div className="absolute top-16 right-4 left-1/2 ml-4 h-24 bg-white rounded shadow-sm"></div>
-                                <div className="absolute bottom-4 left-4 right-4 top-44 bg-white rounded shadow-sm"></div>
+                                {/* Mock UI Elements - Adjusted for better visibility */}
+                                <div className="absolute top-4 left-4 right-4 h-8 bg-white rounded shadow-sm flex items-center px-3">
+                                     <div className="h-2 w-1/3 bg-gray-200 rounded-full"></div>
+                                </div>
+                                <div className="absolute top-16 left-4 w-[45%] h-24 bg-white rounded shadow-sm p-3">
+                                    <div className="h-2 w-1/2 bg-gray-200 rounded-full mb-2"></div>
+                                    <div className="h-full bg-blue-50/50 rounded flex items-end pb-1 px-1 gap-1">
+                                        <div className="h-[40%] w-full bg-blue-200 rounded-sm"></div>
+                                        <div className="h-[70%] w-full bg-blue-300 rounded-sm"></div>
+                                        <div className="h-[50%] w-full bg-blue-200 rounded-sm"></div>
+                                    </div>
+                                </div>
+                                <div className="absolute top-16 right-4 w-[45%] h-24 bg-white rounded shadow-sm p-3">
+                                    <div className="h-2 w-1/2 bg-gray-200 rounded-full mb-2"></div>
+                                     <div className="flex items-center justify-center h-full text-green-500 font-bold text-lg">
+                                        +24%
+                                    </div>
+                                </div>
+                                
+                                {/* AI Insight Card */}
+                                <div className="absolute -bottom-1 left-4 right-4 top-44 bg-white rounded-t-lg shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.1)] p-4">
+                                     <div className="flex items-start gap-3">
+                                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center mt-1">
+                                            <span className="text-purple-600 text-xs">✨</span>
+                                        </div>
+                                        <div>
+                                            <div className="h-2 w-24 bg-gray-800 rounded-full mb-2"></div>
+                                            <div className="h-2 w-full bg-gray-100 rounded-full mb-1"></div>
+                                            <div className="h-2 w-2/3 bg-gray-100 rounded-full"></div>
+                                        </div>
+                                     </div>
+                                </div>
 
-                                <div className="absolute bottom-6 right-6 bg-primary text-white text-xs px-2 py-1 rounded shadow-lg">
+                                <div className="absolute bottom-6 right-6 bg-primary text-white text-xs px-3 py-1.5 rounded-lg shadow-xl z-10 animate-bounce">
                                     ₦2,450,000
                                 </div>
                             </div>

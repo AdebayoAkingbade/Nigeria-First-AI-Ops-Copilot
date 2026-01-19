@@ -109,7 +109,7 @@ export default function BusinessInfoPage() {
 
                     <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4">
                         <Button variant="outline" className="w-full sm:w-auto h-12 px-8" asChild>
-                            <Link href="/">Back</Link>
+                            <Link href="/onboarding/account-setup">Back</Link>
                         </Button>
                         <Button className="w-full sm:w-auto h-12 px-8 bg-primary hover:bg-primary/90 ml-auto" asChild>
                             <Link href="/onboarding/upload-data">Continue to Upload Data</Link>

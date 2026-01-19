@@ -7,6 +7,7 @@ export function OnboardingLayoutClient({ children }: { children: React.ReactNode
     const pathname = usePathname();
 
     let currentStep = 1;
+    if (pathname.includes("account-setup")) currentStep = 1;
     if (pathname.includes("business-info")) currentStep = 2;
     if (pathname.includes("upload-data")) currentStep = 3;
 
