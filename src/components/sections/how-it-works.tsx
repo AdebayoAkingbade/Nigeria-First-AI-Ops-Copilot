@@ -1,0 +1,64 @@
+import { UploadCloud, Sparkles, MessageSquare } from "lucide-react";
+
+export function HowItWorks() {
+    const steps = [
+        {
+            step: 1,
+            title: "Upload Your Data",
+            description: "Snap and upload your invoices, receipts, and POS reports via WhatsApp or our web app.",
+            icon: <UploadCloud className="h-6 w-6 text-purple-600" />,
+            bg: "bg-purple-100",
+            border: "border-purple-200",
+        },
+        {
+            step: 2,
+            title: "AI Analyzes Everything",
+            description: "Our AI accountant reads your receipts, categorizes expenses, and reconciles payments in the background.",
+            icon: <Sparkles className="h-6 w-6 text-blue-600" />,
+            bg: "bg-blue-100",
+            border: "border-blue-200",
+        },
+        {
+            step: 3,
+            title: "Get Insights on WhatsApp",
+            description: "Receive daily profit summaries, expense alerts, and growth tips directly on WhatsApp.",
+            icon: <MessageSquare className="h-6 w-6 text-green-600" />,
+            bg: "bg-green-100",
+            border: "border-green-200",
+        },
+    ];
+
+    return (
+        <section className="py-20 md:py-28 bg-gray-50" id="how-it-works">
+            <div className="container mx-auto px-4">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                        How It Works
+                    </h2>
+                    <p className="text-muted-foreground text-lg">
+                        We've simplified the process to 3 simple steps so you can focus on your business.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                    {steps.map((item) => (
+                        <div key={item.step} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 relative">
+                            <div className="absolute -top-6 left-8 bg-white border border-gray-200 h-10 w-10 rounded-full flex items-center justify-center font-bold text-lg text-primary shadow-sm">
+                                {item.step}
+                            </div>
+
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 mt-2 ${item.bg}`}>
+                                {item.icon}
+                            </div>
+
+                            <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                                {item.description}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
