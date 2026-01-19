@@ -23,7 +23,7 @@ export function Stepper({ currentStep }: StepperProps) {
                     return (
                         <div key={step.id} className="flex items-center flex-1 last:flex-none">
 
-                            {/* Step Circle & Text */}
+                            
                             <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
                                 <div
                                     className={cn(
@@ -47,7 +47,6 @@ export function Stepper({ currentStep }: StepperProps) {
                                 </span>
                             </div>
 
-                            {/* Connecting Line */}
                             {!isLast && (
                                 <div className="flex-1 mx-2 md:mx-4 h-[2px] bg-gray-200">
                                     <div

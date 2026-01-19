@@ -1,5 +1,4 @@
 import { CheckCircle2 } from "lucide-react";
-import Image from "next/image";
 
 export function WhatsAppFeature() {
     const benefits = [
@@ -41,13 +40,13 @@ export function WhatsAppFeature() {
                     </div>
 
                     <div className="flex-1 relative w-full flex justify-center lg:justify-end">
-                        {/* Mockup of WhatsApp Chat */}
+
                         <div className="relative w-[300px] h-[600px] bg-gray-900 rounded-[3rem] border-8 border-gray-900 shadow-2xl overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-8 bg-black z-20 flex justify-center">
                                 <div className="w-1/3 h-6 bg-black rounded-b-xl"></div>
                             </div>
                             <div className="bg-[#ECE5DD] w-full h-full pt-10 px-4 overflow-hidden flex flex-col gap-4">
-                                {/* Message 1 */}
+                                
                                 <div className="self-start bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] text-sm">
                                     <p className="font-semibold text-green-600 mb-1">OpsCopilot AI</p>
                                     <p>Good morning! ☀️ Here is your summary for last week (Aug 12 - Aug 18):</p>
@@ -59,13 +58,11 @@ export function WhatsAppFeature() {
                                     <p className="mt-2 text-xs text-gray-500 text-right">09:01 AM</p>
                                 </div>
 
-                                {/* Message 2 */}
                                 <div className="self-end bg-[#DCF8C6] p-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] text-sm">
                                     <p>This is great! How does this compare to lower sales last month?</p>
                                     <p className="mt-1 text-xs text-gray-500 text-right">09:05 AM</p>
                                 </div>
 
-                                {/* Message 3 */}
                                 <div className="self-start bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] text-sm">
                                     <p>You're up 25%! 🚀 Your new "Bundle Deal" strategy is working well. Keep it up!</p>
                                     <p className="mt-1 text-xs text-gray-500 text-right">09:06 AM</p>

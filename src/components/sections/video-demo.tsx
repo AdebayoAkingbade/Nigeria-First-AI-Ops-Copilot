@@ -14,7 +14,7 @@ export function VideoDemo() {
                 </div>
 
                 <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl bg-gray-900 aspect-video mb-12 group cursor-pointer">
-                    {/* Main Video Placeholder */}
+                    
                     <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-700 to-blue-600 opacity-90"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center pl-1 group-hover:scale-110 transition-transform duration-300 shadow-lg">

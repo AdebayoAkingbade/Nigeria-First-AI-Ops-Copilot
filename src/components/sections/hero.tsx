@@ -50,11 +50,11 @@ export function HeroSection() {
                     </div>
 
                     <div className="relative mx-auto w-full max-w-[500px] lg:max-w-none animate-in slide-in-from-right duration-700 delay-100">
-                        {/* Placeholder for the dashboard image */}
+                        
                         <div className="relative rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-2 shadow-2xl">
                             <div className="rounded-lg bg-white/95 aspect-[4/3] flex items-center justify-center relative overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-200"></div>
-                                {/* Mock UI elements */}
+                               
                                 <div className="absolute top-4 left-4 right-4 h-8 bg-white rounded shadow-sm"></div>
                                 <div className="absolute top-16 left-4 right-1/2 h-24 bg-white rounded shadow-sm"></div>
                                 <div className="absolute top-16 right-4 left-1/2 ml-4 h-24 bg-white rounded shadow-sm"></div>
