@@ -1,9 +1,78 @@
+'use client'
+
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UploadCloud, FileText, Smartphone, Receipt, Lock, Info } from "lucide-react";
+import { UploadCloud, FileText, Smartphone, Receipt, Lock, Info, Loader2, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { nanoid } from "nanoid";
 
 export default function UploadDataPage() {
+    const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<{ name: string, status: string }[]>([]);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+            } else {
+                router.push('/onboarding/account-setup');
+            }
+        }
+        checkUser();
+    }, [router]);
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0 || !userId) return;
+
+        setUploading(true);
+        setError(null);
+
+        try {
+            for (const file of Array.from(files)) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${nanoid()}.${fileExt}`;
+                const filePath = `${userId}/${fileName}`;
+
+                // 1. Upload to Storage
+                const { error: uploadError } = await supabase.storage
+                    .from('receipts')
+                    .upload(filePath, file);
+
+                if (uploadError) throw uploadError;
+
+                // 2. Insert DB Record
+                const { error: dbError } = await supabase
+                    .from('receipts')
+                    .insert({
+                        user_id: userId,
+                        storage_path: filePath,
+                        file_name: file.name,
+                        content_type: file.type,
+                        status: 'pending'
+                    });
+
+                if (dbError) throw dbError;
+
+                setUploadedFiles(prev => [...prev, { name: file.name, status: 'uploaded' }]);
+            }
+        } catch (err: any) {
+            console.error("Upload error:", err);
+            setError(err.message || "Failed to upload file. Make sure 'receipts' bucket exists in Supabase.");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     const providers = [
         { name: "Moniepoint", color: "bg-blue-600" },
         { name: "Opay", color: "bg-green-500" },
@@ -19,16 +88,50 @@ export default function UploadDataPage() {
                     Drag and drop your bank statements or POS reports. We'll extract transactions and generate insights automatically.
                 </p>
 
-                {/* Dropzone */}
-                <div className="border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group mb-8">
-                    <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                        <UploadCloud className="h-8 w-8 text-primary" />
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+                        {error}
                     </div>
-                    <h3 className="font-bold text-lg mb-1">Drag & Drop Files Here</h3>
-                    <p className="text-sm text-muted-foreground mb-6">or click to browse from your device</p>
-                    <Button className="bg-primary hover:bg-primary/90 px-8">Choose Files</Button>
-                    <p className="text-xs text-muted-foreground mt-4">Supported formats: PDF, CSV (Max 10MB per file)</p>
+                )}
+
+                {/* Dropzone */}
+                <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group mb-8"
+                >
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        multiple
+                        accept=".pdf,.csv,image/*"
+                    />
+                    <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        {uploading ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <UploadCloud className="h-8 w-8 text-primary" />}
+                    </div>
+                    <h3 className="font-bold text-lg mb-1">{uploading ? "Uploading..." : "Click to Upload Files"}</h3>
+                    <p className="text-sm text-muted-foreground mb-6">PDF, CSV, or Images (Max 10MB)</p>
+                    <Button type="button" className="bg-primary hover:bg-primary/90 px-8" disabled={uploading}>
+                        {uploading ? "Processing..." : "Choose Files"}
+                    </Button>
                 </div>
+
+                {/* Uploaded Files List */}
+                {uploadedFiles.length > 0 && (
+                    <div className="mb-8 space-y-2">
+                        <h4 className="font-semibold text-sm mb-3">Recently Uploaded</h4>
+                        {uploadedFiles.map((file, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <FileText className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm font-medium text-green-900">{file.name}</span>
+                                </div>
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Categories */}
                 <div className="grid md:grid-cols-3 gap-4 mb-8">
@@ -55,29 +158,14 @@ export default function UploadDataPage() {
                     <div>
                         <h4 className="font-bold text-sm text-blue-900">Your Data is Secure</h4>
                         <p className="text-sm text-blue-700 mt-1 leading-relaxed">
-                            All files are encrypted during upload and storage. We use bank-level security to protect your financial information. Your data is never shared with third parties without your consent.
+                            All files are encrypted during upload and storage. We use bank-level security to protect your financial information.
                         </p>
-                    </div>
-                </div>
-
-                {/* Supported Providers */}
-                <div className="mb-8">
-                    <h4 className="font-semibold text-sm mb-4">Supported POS Providers</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {providers.map((p, i) => (
-                            <div key={i} className="border rounded-lg p-4 flex flex-col items-center justify-center h-24 hover:border-gray-300 transition-colors">
-                                <div className={`h-8 w-8 ${p.color} rounded-md flex items-center justify-center text-white font-bold mb-2`}>
-                                    {p.name.charAt(0)}
-                                </div>
-                                <span className="text-xs font-semibold">{p.name}</span>
-                            </div>
-                        ))}
                     </div>
                 </div>
 
                 <div className="flex flex-col-reverse sm:flex-row gap-4">
                     <Button variant="outline" className="w-full sm:w-1/2 h-12" asChild>
-                        <Link href="/onboarding/business-info">Skip for Now</Link>
+                        <Link href="/dashboard">Skip for Now</Link>
                     </Button>
                     <Button className="w-full sm:w-1/2 h-12 bg-primary hover:bg-primary/90" asChild>
                         <Link href="/dashboard">Analyze My Data</Link>
@@ -94,7 +182,6 @@ export default function UploadDataPage() {
                     <ul className="mt-2 space-y-1 text-sm text-yellow-800 list-disc list-inside">
                         <li>Upload at least 3 months of data for more accurate insights</li>
                         <li>Include both bank statements and POS reports for complete analysis</li>
-                        <li>Make sure files are clear and readable (not scanned images)</li>
                         <li>You can always add more data later from your dashboard</li>
                     </ul>
                 </div>
