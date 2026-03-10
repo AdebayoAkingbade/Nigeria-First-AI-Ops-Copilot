@@ -53,6 +53,7 @@ export default function AccountSetupPage() {
                 email: formData.email,
                 password: formData.password,
                 options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
                     data: {
                         full_name: `${formData.firstName} ${formData.lastName}`,
                         phone: `+234${formData.phone}`,
@@ -274,6 +275,12 @@ export default function AccountSetupPage() {
                                 <p className="text-xs opacity-90">We use bank-level encryption. Your financial data is never shared.</p>
                             </div>
                         </div>
+                    </div>
+                    <div className="pt-6 text-center text-sm">
+                        Already have an account?{" "}
+                        <Link href="/login" className="text-primary hover:underline font-medium">
+                            Log in
+                        </Link>
                     </div>
                 </CardContent>
             </Card>
