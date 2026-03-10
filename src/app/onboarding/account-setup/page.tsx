@@ -23,6 +23,7 @@ export default function AccountSetupPage() {
         password: '',
         agreeToTerms: false,
     });
+    const [confirmationRequired, setConfirmationRequired] = useState(false);
 
     const handleSocialLogin = async (provider: 'google' | 'facebook') => {
         setLoading(true);
@@ -45,6 +46,7 @@ export default function AccountSetupPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setConfirmationRequired(false);
 
         try {
             const { data, error: signupError } = await supabase.auth.signUp({
@@ -61,6 +63,12 @@ export default function AccountSetupPage() {
             if (signupError) throw signupError;
 
             if (data.user) {
+                // If email confirmation is enabled, session will be null
+                if (!data.session) {
+                    setConfirmationRequired(true);
+                    return;
+                }
+
                 // Profile is automatically created by trigger or we can do it manually here if no trigger exists
                 const { error: profileError } = await supabase
                     .from('profiles')
@@ -70,7 +78,7 @@ export default function AccountSetupPage() {
                         whatsapp_number: `+234${formData.phone}`,
                     });
 
-                if (profileError) console.error("Profile creation error:", profileError);
+                if (profileError) throw profileError;
 
                 router.push('/onboarding/business-info');
             }
@@ -96,100 +104,116 @@ export default function AccountSetupPage() {
                             {error}
                         </div>
                     )}
-                    <form onSubmit={handleSignup} className="space-y-6">
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="firstName">First Name</Label>
-                                <Input
-                                    id="firstName"
-                                    placeholder="Adebayo"
-                                    required
-                                    value={formData.firstName}
-                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="lastName">Last Name</Label>
-                                <Input
-                                    id="lastName"
-                                    placeholder="Ogunleye"
-                                    required
-                                    value={formData.lastName}
-                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <div className="flex">
-                                <div className="flex items-center px-3 border rounded-l-md border-r-0 bg-muted/50 text-muted-foreground">
-                                    <span className="text-sm">🇳🇬 +234</span>
-                                </div>
-                                <Input
-                                    id="phone"
-                                    className="rounded-l-none"
-                                    placeholder="8012345678"
-                                    required
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground">We'll contact you via WhatsApp for insights</p>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="adebayo@business.com"
-                                required
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="Create a strong password"
-                                required
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
-                            <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
-                        </div>
-
-                        <div className="space-y-4 pt-2">
-                            <div className="flex items-start space-x-2">
-                                <Checkbox
-                                    id="terms"
-                                    checked={formData.agreeToTerms}
-                                    onCheckedChange={(checked) => setFormData({ ...formData, agreeToTerms: !!checked })}
-                                    required
-                                />
-                                <label
-                                    htmlFor="terms"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                    I agree to the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="pt-4">
+                    {confirmationRequired && (
+                        <div className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-md text-sm space-y-2">
+                            <h4 className="font-bold">Confirmation email sent!</h4>
+                            <p>Please check your email and click the confirmation link to complete your setup. Once confirmed, you'll be able to continue to the next step.</p>
                             <Button
-                                type="submit"
-                                className="w-full h-12 bg-primary hover:bg-primary/90 text-lg"
-                                disabled={loading || !formData.agreeToTerms}
+                                variant="outline"
+                                size="sm"
+                                className="mt-2 text-green-800 border-green-200 hover:bg-green-100"
+                                onClick={() => setConfirmationRequired(false)}
                             >
-                                {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Continue to Business Info"}
+                                Back to signup
                             </Button>
                         </div>
-                    </form>
+                    )}
+                    {!confirmationRequired && (
+                        <form onSubmit={handleSignup} className="space-y-6">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="firstName">First Name</Label>
+                                    <Input
+                                        id="firstName"
+                                        placeholder="Adebayo"
+                                        required
+                                        value={formData.firstName}
+                                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="lastName">Last Name</Label>
+                                    <Input
+                                        id="lastName"
+                                        placeholder="Ogunleye"
+                                        required
+                                        value={formData.lastName}
+                                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <div className="flex">
+                                    <div className="flex items-center px-3 border rounded-l-md border-r-0 bg-muted/50 text-muted-foreground">
+                                        <span className="text-sm">🇳🇬 +234</span>
+                                    </div>
+                                    <Input
+                                        id="phone"
+                                        className="rounded-l-none"
+                                        placeholder="8012345678"
+                                        required
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground">We'll contact you via WhatsApp for insights</p>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="email">Email Address</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="adebayo@business.com"
+                                    required
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="Create a strong password"
+                                    required
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                                <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+                            </div>
+
+                            <div className="space-y-4 pt-2">
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox
+                                        id="terms"
+                                        checked={formData.agreeToTerms}
+                                        onCheckedChange={(checked) => setFormData({ ...formData, agreeToTerms: !!checked })}
+                                        required
+                                    />
+                                    <label
+                                        htmlFor="terms"
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                        I agree to the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <Button
+                                    type="submit"
+                                    className="w-full h-12 bg-primary hover:bg-primary/90 text-lg"
+                                    disabled={loading || !formData.agreeToTerms}
+                                >
+                                    {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Continue to Business Info"}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
 
                     <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center">
