@@ -31,7 +31,21 @@ export default function BusinessInfoPage() {
     });
 
     useEffect(() => {
-        async function getUser() {
+        async function checkAuth() {
+            // First check session for fastest response
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                // If no session, wait a brief moment and check again (handles slight delays in persistence)
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const { data: { session: retrySession } } = await supabase.auth.getSession();
+                if (!retrySession) {
+                    router.push('/onboarding/account-setup');
+                    return;
+                }
+            }
+
+            // Securely verify user
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
@@ -59,7 +73,7 @@ export default function BusinessInfoPage() {
             }
             setInitialLoading(false);
         }
-        getUser();
+        checkAuth();
     }, [router]);
 
     const handleSubmit = async (e: React.FormEvent) => {

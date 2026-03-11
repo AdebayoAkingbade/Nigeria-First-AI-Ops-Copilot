@@ -105,13 +105,13 @@ export default function UploadDataPage() {
                         onChange={handleFileSelect}
                         className="hidden"
                         multiple
-                        accept=".pdf,.csv,image/*"
+                        accept=".pdf,.csv,.xls,.xlsx,image/*"
                     />
                     <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                         {uploading ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <UploadCloud className="h-8 w-8 text-primary" />}
                     </div>
                     <h3 className="font-bold text-lg mb-1">{uploading ? "Uploading..." : "Click to Upload Files"}</h3>
-                    <p className="text-sm text-muted-foreground mb-6">PDF, CSV, or Images (Max 10MB)</p>
+                    <p className="text-sm text-muted-foreground mb-6">PDF, Excel, CSV, or Images (Max 10MB)</p>
                     <Button type="button" className="bg-primary hover:bg-primary/90 px-8" disabled={uploading}>
                         {uploading ? "Processing..." : "Choose Files"}
                     </Button>
@@ -136,7 +136,7 @@ export default function UploadDataPage() {
                 {/* Categories */}
                 <div className="grid md:grid-cols-3 gap-4 mb-8">
                     {[
-                        { title: "Bank Statements", sub: "PDF or CSV format", icon: <FileText className="h-6 w-6 text-white" />, color: "bg-purple-500" },
+                        { title: "Bank Statements", sub: "PDF, Excel, or CSV", icon: <FileText className="h-6 w-6 text-white" />, color: "bg-purple-500" },
                         { title: "POS Reports", sub: "Moniepoint, Opay, Paystack", icon: <Smartphone className="h-6 w-6 text-white" />, color: "bg-green-500" },
                         { title: "Invoice Records", sub: "Optional for better insights", icon: <Receipt className="h-6 w-6 text-white" />, color: "bg-blue-600" },
                     ].map((cat, i) => (

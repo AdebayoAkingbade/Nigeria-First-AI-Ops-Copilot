@@ -19,9 +19,9 @@ export async function POST(req: Request) {
         const body = await req.json();
         console.log('WhatsApp Webhook Received:', JSON.stringify(body, null, 2));
 
-        // TODO: Map WhatsApp sender to Supabase User Profile
+        // TODO: Map WhatsApp sender (body.From) to Supabase User Profile via whatsapp_number
         // TODO: Handle media (attachments) - upload to Supabase Storage
-        // TODO: Trigger AI analysis
+        // TODO: Trigger AI analysis based on the recognized user
 
         return NextResponse.json({ status: 'received' });
     } catch (error: any) {

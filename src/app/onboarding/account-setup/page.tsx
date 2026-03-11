@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,16 @@ export default function AccountSetupPage() {
         agreeToTerms: false,
     });
     const [confirmationRequired, setConfirmationRequired] = useState(false);
+
+    useEffect(() => {
+        async function checkUser() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                router.push('/onboarding/business-info');
+            }
+        }
+        checkUser();
+    }, [router]);
 
     const handleSocialLogin = async (provider: 'google' | 'facebook') => {
         setLoading(true);
