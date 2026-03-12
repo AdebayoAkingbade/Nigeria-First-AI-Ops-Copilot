@@ -50,11 +50,30 @@ export default function BusinessInfoPage() {
             if (user) {
                 setUserId(user.id);
                 // Pre-fill if profile exists
-                const { data: profile } = await supabase
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
-                    .single();
+                    .maybeSingle();
+
+                if (profile && profile.business_name) {
+                    // If already filled, check if they have receipts, but avoid loops
+                    // If they are on this page, it's likely they want to edit OR they were redirected here incorrectly.
+                    // To prevent loops, we ONLY redirect if they aren't manually coming back here.
+                    // Actually, for consistency with LoginPage, we redirect appropriately:
+                    const { count } = await supabase
+                        .from('receipts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', user.id);
+                    
+                    if (count && count > 0) {
+                        router.push('/dashboard');
+                        return;
+                    } else {
+                        router.push('/onboarding/upload-data');
+                        return;
+                    }
+                }
 
                 if (profile) {
                     setFormData({
@@ -86,7 +105,8 @@ export default function BusinessInfoPage() {
         try {
             const { error: updateError } = await supabase
                 .from('profiles')
-                .update({
+                .upsert({
+                    id: userId,
                     business_name: formData.businessName,
                     business_type: formData.businessType,
                     industry: formData.industry,
@@ -96,8 +116,7 @@ export default function BusinessInfoPage() {
                     monthly_revenue_range: formData.revenue,
                     business_goals: formData.goals,
                     updated_at: new Date().toISOString()
-                })
-                .eq('id', userId);
+                }, { onConflict: 'id' });
 
             if (updateError) throw updateError;
 

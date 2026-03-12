@@ -68,10 +68,10 @@ export function Pricing() {
 
                 <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                     {plans.map((plan, i) => (
-                        <div key={i} className={`relative flex flex-col p-8 rounded-2xl border ${plan.popular ? 'border-primary shadow-xl scale-105 z-10' : 'border-gray-200'}`}>
+                        <div key={i} className={`relative flex flex-col p-8 rounded-3xl border transition-all duration-300 hover:shadow-2xl ${plan.popular ? 'border-primary ring-4 ring-primary/5 shadow-xl scale-105 z-10 bg-white' : 'border-gray-100 hover:border-primary/20 bg-white/50'}`}>
                             {plan.popular && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                                    Most Popular
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                                    Recommended
                                 </div>
                             )}
 
@@ -95,7 +95,7 @@ export function Pricing() {
 
                             <Button
                                 variant={plan.variant}
-                                className={`w-full ${plan.popular ? 'bg-primary hover:bg-primary/90' : ''}`}
+                                className={`w-full h-12 rounded-xl font-bold transition-all ${plan.popular ? 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25' : 'border-gray-200 hover:border-primary hover:text-primary'}`}
                                 size="lg"
                             >
                                 {plan.cta}

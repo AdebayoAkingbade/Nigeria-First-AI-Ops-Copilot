@@ -40,19 +40,19 @@ export function HowItWorks() {
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                 <div className="grid md:grid-cols-3 gap-8 relative z-10">
                     {steps.map((item) => (
-                        <div key={item.step} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 relative">
-                            <div className="absolute -top-6 left-8 bg-white border border-gray-200 h-10 w-10 rounded-full flex items-center justify-center font-bold text-lg text-primary shadow-sm">
+                        <div key={item.step} className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <div className="absolute -top-5 left-8 bg-primary text-white h-10 w-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg group-hover:scale-110 transition-transform">
                                 {item.step}
                             </div>
-
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 mt-2 ${item.bg}`}>
+                            
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 mt-4 ${item.bg} group-hover:bg-opacity-80 transition-colors`}>
                                 {item.icon}
                             </div>
 
-                            <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                            <p className="text-muted-foreground leading-relaxed">
+                            <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">{item.title}</h3>
+                            <p className="text-muted-foreground leading-relaxed text-sm">
                                 {item.description}
                             </p>
                         </div>

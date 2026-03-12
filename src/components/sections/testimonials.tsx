@@ -6,19 +6,19 @@ export function Testimonials() {
             name: "Adebayo O.",
             role: "Retail Store Owner",
             text: "OpsCopilot saved me from hiring an accountant. It automatically tracks my sales and tells me exactly what to restock.",
-            bg: "bg-blue-900",
+            img: "/images/avatar-adebayo.png",
         },
         {
             name: "Chioma K.",
-            role: "restaurant Manager",
+            role: "Restaurant Manager",
             text: "I used to spend 5 hours a week on spreadsheets. Now I just take pictures of receipts and get a report on WhatsApp.",
-            bg: "bg-green-900",
+            img: "/images/avatar-chioma.png",
         },
         {
             name: "Tunde B.",
             role: "Logistics CEO",
             text: "The credit readiness score is a game changer. I finally got approved for a loan after months of rejection.",
-            bg: "bg-purple-900",
+            img: "/images/avatar-tunde.png",
         },
     ];
 
@@ -45,8 +45,12 @@ export function Testimonials() {
                                 "{review.text}"
                             </p>
                             <div className="flex items-center gap-4">
-                                <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold ${review.bg}`}>
-                                    {review.name.charAt(0)}
+                                <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-primary/20 shadow-sm flex-shrink-0">
+                                    <img 
+                                        src={review.img} 
+                                        alt={review.name} 
+                                        className="h-full w-full object-cover"
+                                    />
                                 </div>
                                 <div>
                                     <p className="font-semibold">{review.name}</p>

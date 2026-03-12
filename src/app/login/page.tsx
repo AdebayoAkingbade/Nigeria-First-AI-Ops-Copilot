@@ -19,11 +19,60 @@ export default function LoginPage() {
         password: '',
     });
 
+    const checkOnboardingStatusAndRedirect = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // 1. Check profile for business info
+            // Use maybeSingle to avoid errors if NO profile exists yet
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('business_name')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (profileError) {
+                console.error("Profile fetch error:", profileError);
+                // If there's an error, we might want to let them go to business-info as a fallback
+                router.push('/onboarding/business-info');
+                return;
+            }
+
+            if (!profile || !profile.business_name) {
+                router.push('/onboarding/business-info');
+                return;
+            }
+
+            // 2. Check if they have uploaded any data
+            // Fetch top 1 to actually check existence rather than just count (more robust in some clients)
+            const { data: receipts, error: countError } = await supabase
+                .from('receipts')
+                .select('id')
+                .eq('user_id', user.id)
+                .limit(1);
+
+            if (countError) console.error("Receipts check error:", countError);
+
+            if (!receipts || receipts.length === 0) {
+                router.push('/onboarding/upload-data');
+                return;
+            }
+
+            // 3. All good, go to dashboard
+            router.push('/dashboard');
+        } catch (err) {
+            console.error("Redirection logic failed:", err);
+            // Default fallback
+            router.push('/onboarding/business-info');
+        }
+    };
+
     useEffect(() => {
         async function checkUser() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                router.push('/onboarding/business-info');
+                await checkOnboardingStatusAndRedirect();
             }
         }
         checkUser();
@@ -42,7 +91,7 @@ export default function LoginPage() {
 
             if (loginError) throw loginError;
 
-            router.push('/onboarding/business-info');
+            await checkOnboardingStatusAndRedirect();
         } catch (err: any) {
             setError(err.message);
         } finally {

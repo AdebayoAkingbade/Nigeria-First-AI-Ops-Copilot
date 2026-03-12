@@ -22,6 +22,16 @@ export default function UploadDataPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
+                // Check if already has data
+                const { count } = await supabase
+                    .from('receipts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id);
+                
+                if (count && count > 0) {
+                    router.push('/dashboard');
+                    return;
+                }
             } else {
                 router.push('/onboarding/account-setup');
             }
@@ -115,7 +125,7 @@ export default function UploadDataPage() {
                     <Button type="button" className="bg-primary hover:bg-primary/90 px-8" disabled={uploading}>
                         {uploading ? "Processing..." : "Choose Files"}
                     </Button>
-                </div>
+                </div>n
 
                 {/* Uploaded Files List */}
                 {uploadedFiles.length > 0 && (
