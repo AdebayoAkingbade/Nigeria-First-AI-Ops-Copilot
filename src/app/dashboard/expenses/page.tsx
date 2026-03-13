@@ -5,50 +5,133 @@ import {
     Search,
     Filter,
     ArrowUpRight,
-    ArrowDownRight,
     TrendingUp,
     CreditCard,
-    Calendar,
     Receipt,
-    ChevronDown,
     MoreHorizontal,
     Download,
     FileText,
-    Plus
+    Plus,
+    X,
+    Brain,
+    Landmark,
+    CheckCircle2,
+    Sparkles,
+    ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 
 export default function ExpensesPage() {
     const [loading, setLoading] = useState(true);
     const [expenses, setExpenses] = useState<any[]>([]);
     const [totalExpenses, setTotalExpenses] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Modal states
+    const [showAddExpense, setShowAddExpense] = useState(false);
+    const [showAnalyze, setShowAnalyze] = useState(false);
+    const [showConnectBank, setShowConnectBank] = useState(false);
+
+    // Add Expense form
+    const [newExpense, setNewExpense] = useState({
+        merchant_name: '',
+        category: 'General',
+        amount: '',
+        transaction_date: new Date().toISOString().split('T')[0]
+    });
+    const [submitting, setSubmitting] = useState(false);
+
+    const categories = [
+        { name: "Marketing", spent: 45000, color: "bg-blue-500", percentage: 22, trend: "+8%" },
+        { name: "Inventory", spent: 125000, color: "bg-purple-500", percentage: 62, trend: "+3%" },
+        { name: "Utilities", spent: 15000, color: "bg-green-500", percentage: 8, trend: "-5%" },
+        { name: "Logistics", spent: 22000, color: "bg-orange-500", percentage: 12, trend: "+1%" },
+    ];
+
+    const categoryOptions = ["General", "Marketing", "Inventory", "Utilities", "Logistics", "Staff", "Rent", "Equipment", "Other"];
+
+    const nigerianBanks = [
+        { name: "Access Bank", logo: "🏦", color: "bg-red-50 border-red-200 text-red-700" },
+        { name: "GTBank", logo: "🏦", color: "bg-orange-50 border-orange-200 text-orange-700" },
+        { name: "Zenith Bank", logo: "🏦", color: "bg-blue-50 border-blue-200 text-blue-700" },
+        { name: "First Bank", logo: "🏦", color: "bg-green-50 border-green-200 text-green-700" },
+        { name: "UBA", logo: "🏦", color: "bg-red-50 border-red-200 text-red-700" },
+        { name: "Sterling Bank", logo: "🏦", color: "bg-purple-50 border-purple-200 text-purple-700" },
+    ];
 
     useEffect(() => {
-        async function fetchExpenses() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-
-            const { data } = await supabase
-                .from('expenses')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .order('transaction_date', { ascending: false });
-
-            setExpenses(data || []);
-            setTotalExpenses(data?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0);
-            setLoading(false);
-        }
         fetchExpenses();
     }, []);
 
-    const categories = [
-        { name: "Marketing", spent: 45000, color: "bg-blue-500" },
-        { name: "Inventory", spent: 125000, color: "bg-purple-500" },
-        { name: "Utilities", spent: 15000, color: "bg-green-500" },
-        { name: "Logistics", spent: 22000, color: "bg-orange-500" },
-    ];
+    async function fetchExpenses() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data } = await supabase
+            .from('expenses')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('transaction_date', { ascending: false });
+
+        setExpenses(data || []);
+        setTotalExpenses(data?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0);
+        setLoading(false);
+    }
+
+    const handleExport = () => {
+        const rows = [
+            ['Merchant', 'Category', 'Date', 'Amount (₦)'],
+            ...expenses.map(e => [
+                e.merchant_name || 'Vendor',
+                e.category || 'General',
+                new Date(e.transaction_date).toLocaleDateString(),
+                Number(e.amount).toFixed(2)
+            ])
+        ];
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleAddExpense = async () => {
+        if (!newExpense.merchant_name || !newExpense.amount) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+        setSubmitting(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setSubmitting(false); return; }
+
+        const { error } = await supabase.from('expenses').insert({
+            user_id: session.user.id,
+            merchant_name: newExpense.merchant_name,
+            category: newExpense.category,
+            amount: parseFloat(newExpense.amount),
+            transaction_date: newExpense.transaction_date,
+        });
+
+        if (error) {
+            alert(`Error: ${error.message}`);
+        } else {
+            setShowAddExpense(false);
+            setNewExpense({ merchant_name: '', category: 'General', amount: '', transaction_date: new Date().toISOString().split('T')[0] });
+            await fetchExpenses();
+        }
+        setSubmitting(false);
+    };
+
+    const filteredExpenses = expenses.filter(e =>
+        (e.merchant_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (e.category || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-in fade-in duration-500">
@@ -59,10 +142,10 @@ export default function ExpensesPage() {
                     <p className="text-slate-500">Keep track of your spending and identify cost-saving opportunities.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" className="gap-2" onClick={handleExport}>
                         <Download className="h-4 w-4" /> Export
                     </Button>
-                    <Button className="bg-primary hover:bg-primary/90 gap-2">
+                    <Button className="bg-primary hover:bg-primary/90 gap-2" onClick={() => setShowAddExpense(true)}>
                         <Plus className="h-4 w-4" /> Add Expense
                     </Button>
                 </div>
@@ -123,6 +206,8 @@ export default function ExpensesPage() {
                                         <input
                                             type="text"
                                             placeholder="Search expenses..."
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
                                             className="pl-9 pr-4 py-1.5 bg-slate-100 border-none rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                         />
                                     </div>
@@ -145,8 +230,8 @@ export default function ExpensesPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                        {expenses.length > 0 ? (
-                                            expenses.map((exp, i) => (
+                                        {filteredExpenses.length > 0 ? (
+                                            filteredExpenses.map((exp, i) => (
                                                 <tr key={i} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
@@ -180,6 +265,14 @@ export default function ExpensesPage() {
                                                     <div className="flex flex-col items-center">
                                                         <Receipt className="h-10 w-10 text-slate-300 mb-2" />
                                                         <p className="text-slate-500 font-medium italic">No expenses recorded yet.</p>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="mt-4"
+                                                            onClick={() => setShowAddExpense(true)}
+                                                        >
+                                                            <Plus className="h-4 w-4 mr-2" /> Add First Expense
+                                                        </Button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -207,12 +300,16 @@ export default function ExpensesPage() {
                                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full ${cat.color} rounded-full transition-all duration-1000`}
-                                            style={{ width: `${(cat.spent / 200000) * 100}%` }}
+                                            style={{ width: `${cat.percentage}%` }}
                                         ></div>
                                     </div>
                                 </div>
                             ))}
-                            <Button variant="outline" className="w-full text-xs font-bold py-6 border-dashed border-2 hover:border-primary hover:text-primary transition-all">
+                            <Button
+                                variant="outline"
+                                className="w-full text-xs font-bold py-6 border-dashed border-2 hover:border-primary hover:text-primary transition-all"
+                                onClick={() => setShowAnalyze(true)}
+                            >
                                 Analyze All Categories
                             </Button>
                         </CardContent>
@@ -224,16 +321,211 @@ export default function ExpensesPage() {
                             <p className="text-white/80 text-xs mb-6 leading-relaxed">
                                 Connect your bank account to automatically import and categorize every transaction with 99% accuracy.
                             </p>
-                            <Button className="w-full bg-white text-indigo-700 hover:bg-white/90 font-bold transition-transform hover:scale-105">
+                            <Button
+                                className="w-full bg-white text-indigo-700 hover:bg-white/90 font-bold transition-transform hover:scale-105"
+                                onClick={() => setShowConnectBank(true)}
+                            >
                                 Connect Bank Now
                             </Button>
                         </CardContent>
-                        {/* Decorative circles */}
                         <div className="absolute top-[-20px] right-[-20px] h-32 w-32 bg-white/10 rounded-full blur-2xl"></div>
                         <div className="absolute bottom-[-40px] left-[-20px] h-48 w-48 bg-white/5 rounded-full blur-2xl"></div>
                     </Card>
                 </div>
             </div>
+
+            {/* ─── Add Expense Modal ─── */}
+            {showAddExpense && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Card className="w-full max-w-md border-none shadow-2xl animate-in zoom-in-95 duration-200">
+                        <CardHeader className="border-b">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Add Expense</CardTitle>
+                                    <CardDescription>Record a new business expense</CardDescription>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => setShowAddExpense(false)}>
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-5">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Merchant / Vendor Name *</label>
+                                <Input
+                                    placeholder="e.g. Ahmed Supplies"
+                                    value={newExpense.merchant_name}
+                                    onChange={e => setNewExpense({ ...newExpense, merchant_name: e.target.value })}
+                                    className="h-11"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Category</label>
+                                    <div className="relative">
+                                        <select
+                                            value={newExpense.category}
+                                            onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}
+                                            className="w-full h-11 pl-4 pr-8 border rounded-md text-sm font-medium appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white"
+                                        >
+                                            {categoryOptions.map(c => <option key={c}>{c}</option>)}
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Amount (₦) *</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={newExpense.amount}
+                                        onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
+                                        className="h-11"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                                <Input
+                                    type="date"
+                                    value={newExpense.transaction_date}
+                                    onChange={e => setNewExpense({ ...newExpense, transaction_date: e.target.value })}
+                                    className="h-11"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setShowAddExpense(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className="flex-1 bg-primary hover:bg-primary/90"
+                                    onClick={handleAddExpense}
+                                    disabled={submitting}
+                                >
+                                    {submitting ? 'Saving...' : 'Save Expense'}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* ─── Analyze All Categories Modal ─── */}
+            {showAnalyze && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Card className="w-full max-w-lg border-none shadow-2xl animate-in zoom-in-95 duration-200">
+                        <CardHeader className="bg-slate-900 text-white rounded-t-xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 bg-primary/30 rounded-xl flex items-center justify-center">
+                                        <Brain className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-white">AI Category Analysis</CardTitle>
+                                        <CardDescription className="text-slate-400">Smart insights on your spending</CardDescription>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-white/50 hover:text-white hover:bg-white/10"
+                                    onClick={() => setShowAnalyze(false)}
+                                >
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-4">
+                            {categories.map((cat, i) => {
+                                const insights = [
+                                    "Your marketing spend is 15% above industry average. Consider reallocating to higher-ROI channels.",
+                                    "Inventory purchases are optimized but bulk buying discounts are unavailable. Negotiate quarterly contracts.",
+                                    "Utilities cost is below average — great efficiency! No action needed.",
+                                    "Logistics costs are steady but 2 late deliveries this month add invisible costs."
+                                ];
+                                return (
+                                    <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`h-2.5 w-2.5 rounded-full ${cat.color}`}></span>
+                                                <h5 className="font-bold text-sm text-slate-900">{cat.name}</h5>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-bold text-slate-900">₦{cat.spent.toLocaleString()}</span>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cat.trend.startsWith('+') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                                    {cat.trend}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-200 rounded-full mb-3 overflow-hidden">
+                                            <div className={`h-full ${cat.color} rounded-full`} style={{ width: `${cat.percentage}%` }}></div>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed flex items-start gap-1.5">
+                                            <Sparkles className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                                            {insights[i]}
+                                        </p>
+                                    </div>
+                                );
+                            })}
+                            <Button className="w-full bg-primary hover:bg-primary/90 mt-2" onClick={() => setShowAnalyze(false)}>
+                                Got It
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* ─── Connect Bank Modal ─── */}
+            {showConnectBank && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <Card className="w-full max-w-md border-none shadow-2xl animate-in zoom-in-95 duration-200">
+                        <CardHeader className="border-b">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                        <Landmark className="h-5 w-5 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <CardTitle>Connect Your Bank</CardTitle>
+                                        <CardDescription>Auto-import all transactions</CardDescription>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => setShowConnectBank(false)}>
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-5">
+                            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                                <span className="text-amber-600 text-xs font-bold">⚡ COMING SOON</span>
+                                <span className="text-amber-700 text-xs">Bank sync is in beta. We'll notify you first!</span>
+                            </div>
+                            <p className="text-sm text-slate-500">Select your bank to be notified when it's supported:</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {nigerianBanks.map((bank, i) => (
+                                    <button
+                                        key={i}
+                                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all hover:scale-105 ${bank.color}`}
+                                    >
+                                        <span className="text-xl">{bank.logo}</span>
+                                        <span>{bank.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <Button
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
+                                onClick={() => setShowConnectBank(false)}
+                            >
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> Notify Me When Ready
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

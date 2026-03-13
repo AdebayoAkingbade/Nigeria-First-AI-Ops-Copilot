@@ -116,6 +116,17 @@ export default function DashboardPage() {
     const [isConnectingWhatsapp, setIsConnectingWhatsapp] = useState(false);
     const [showWhatsappModal, setShowWhatsappModal] = useState(false);
     const [whatsappNumber, setWhatsappNumber] = useState("234");
+    const [cashFlowPeriod, setCashFlowPeriod] = useState<'7D' | '30D'>('7D');
+
+    const cashFlow7D = {
+        data: [35, 45, 30, 60, 50, 80, 70],
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    };
+    const cashFlow30D = {
+        data: [30, 40, 55, 35, 65, 48, 72, 60, 85, 78, 90, 70, 55, 80, 65, 95, 88, 72, 60, 78, 85, 70, 65, 92, 80, 74, 68, 85, 90, 75],
+        labels: Array.from({ length: 30 }, (_, i) => i % 7 === 0 ? `W${Math.floor(i/7)+1}` : '')
+    };
+    const activeCashFlow = cashFlowPeriod === '7D' ? cashFlow7D : cashFlow30D;
 
     const handleConnectWhatsapp = () => {
         setShowWhatsappModal(true);
@@ -258,26 +269,44 @@ export default function DashboardPage() {
                                     <CardDescription>Visual trend of your revenue vs expenses</CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2 p-1 bg-slate-50 rounded-lg border">
-                                    <Button variant="ghost" size="sm" className="h-7 text-xs font-bold bg-white shadow-sm border">7D</Button>
-                                    <Button variant="ghost" size="sm" className="h-7 text-xs">30D</Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={`h-7 text-xs font-bold transition-all ${
+                                            cashFlowPeriod === '7D'
+                                                ? 'bg-white shadow-sm border text-slate-900'
+                                                : 'text-slate-400 hover:text-slate-700'
+                                        }`}
+                                        onClick={() => setCashFlowPeriod('7D')}
+                                    >7D</Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={`h-7 text-xs font-bold transition-all ${
+                                            cashFlowPeriod === '30D'
+                                                ? 'bg-white shadow-sm border text-slate-900'
+                                                : 'text-slate-400 hover:text-slate-700'
+                                        }`}
+                                        onClick={() => setCashFlowPeriod('30D')}
+                                    >30D</Button>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="h-64 w-full bg-slate-50 flex items-end justify-between p-4 rounded-xl gap-2 border border-slate-100">
-                                {[35, 45, 30, 60, 50, 80, 70].map((h, i) => (
-                                    <div key={i} className="flex-1 space-y-2">
-                                        <div className="flex items-end gap-1 h-48 group">
+                            <div className="h-64 w-full bg-slate-50 flex items-end justify-between p-4 rounded-xl gap-1 border border-slate-100 overflow-hidden">
+                                {activeCashFlow.data.map((h, i) => (
+                                    <div key={`${cashFlowPeriod}-${i}`} className="flex-1 space-y-1" style={{ minWidth: cashFlowPeriod === '30D' ? 0 : undefined }}>
+                                        <div className="flex items-end gap-0.5 h-48 group">
                                             <div
                                                 style={{ height: `${h}%` }}
-                                                className="w-full bg-primary/20 rounded-t-lg group-hover:bg-primary/40 transition-all duration-500"
+                                                className="w-full bg-primary/20 rounded-t-lg group-hover:bg-primary/50 transition-all duration-500"
                                             ></div>
                                             <div
-                                                style={{ height: `${h - 15}%` }}
+                                                style={{ height: `${Math.max(h - 15, 5)}%` }}
                                                 className="w-full bg-red-400/20 rounded-t-lg group-hover:bg-red-400/40 transition-all duration-500"
                                             ></div>
                                         </div>
-                                        <div className="text-[10px] text-center text-slate-400 font-bold">Day {i + 1}</div>
+                                        <div className="text-[9px] text-center text-slate-400 font-bold truncate">{activeCashFlow.labels[i]}</div>
                                     </div>
                                 ))}
                             </div>
