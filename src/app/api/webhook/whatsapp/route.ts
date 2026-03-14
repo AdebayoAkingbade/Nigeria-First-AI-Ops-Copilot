@@ -1,31 +1,100 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import twilio from 'twilio';
+import OpenAI from 'openai';
 
-export async function GET(req: Request) {
-    // Webhook verification for WhatsApp/Twilio
-    const { searchParams } = new URL(req.url);
-    const mode = searchParams.get('hub.mode');
-    const token = searchParams.get('hub.verify_token');
-    const challenge = searchParams.get('hub.challenge');
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-        return new Response(challenge, { status: 200 });
-    }
+const accountSid = process.env.TWILIO_ACCOUNT_SID!;
+const authToken = process.env.TWILIO_AUTH_TOKEN!;
+const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER!;
+const client = twilio(accountSid, authToken);
 
-    return NextResponse.json({ error: 'Invalid verification' }, { status: 403 });
-}
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        console.log('WhatsApp Webhook Received:', JSON.stringify(body, null, 2));
-
-        // TODO: Map WhatsApp sender (body.From) to Supabase User Profile via whatsapp_number
-        // TODO: Handle media (attachments) - upload to Supabase Storage
-        // TODO: Trigger AI analysis based on the recognized user
-
-        return NextResponse.json({ status: 'received' });
+        // Twilio sends application/x-www-form-urlencoded
+        const bodyText = await req.text();
+        const urlParams = new URLSearchParams(bodyText);
+        
+        // Sender: whatsapp:+23480123...
+        const twilioFrom = urlParams.get('From'); 
+        const messageBody = urlParams.get('Body');
+        
+        if (!twilioFrom || !messageBody) {
+            return NextResponse.json({ error: 'Invalid Payload' }, { status: 400 });
+        }
+        
+        console.log(`Received WhatsApp message from ${twilioFrom}: ${messageBody}`);
+        
+        const senderPhone = twilioFrom.replace('whatsapp:', '');
+        
+        // 1. Look up user by WhatsApp number
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('whatsapp_number', senderPhone)
+            .single();
+            
+        if (profileError || !profile) {
+            // Unrecognized user
+            await client.messages.create({
+                body: "Hello! OpsCopilot doesn't recognize this number. Please log in to your dashboard and connect your WhatsApp number.",
+                from: `whatsapp:${twilioNumber}`,
+                to: twilioFrom
+            });
+            return NextResponse.json({ status: 'unregistered_handled' });
+        }
+        
+        // 2. Fetch context for the AI (e.g., this month's expenses)
+        const { data: expenses } = await supabase
+            .from('expenses')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(10);
+            
+        // Prepare context
+        const businessName = profile.business_name || 'your business';
+        const contextStr = expenses && expenses.length > 0
+            ? `Recent expenses:\n${expenses.map(e => `- ${e.date || ''}: ${e.merchant_name} (₦${e.amount})`).join('\n')}`
+            : 'No recent expenses recorded.';
+            
+        // 3. Ask OpenAI
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: `You are OpsCopilot, a professional, friendly AI financial assistant for a Nigerian business owner named ${profile.email}. Their business is called "${businessName}". Keep your answers extremely concise, helpful, and formatted well for WhatsApp (using *bolding* for emphasis). Refer to the business data provided below if relevant.\n\nContext:\n${contextStr}`
+                },
+                {
+                    role: "user",
+                    content: messageBody
+                }
+            ],
+            max_tokens: 250,
+            temperature: 0.7,
+        });
+        
+        const aiResponse = completion.choices[0]?.message?.content || "I'm sorry, I'm having trouble analyzing your request right now.";
+        
+        // 4. Send response back to WhatsApp via Twilio
+        await client.messages.create({
+            body: aiResponse,
+            from: `whatsapp:${twilioNumber}`,
+            to: twilioFrom
+        });
+        
+        return NextResponse.json({ status: 'success' });
+        
     } catch (error: any) {
-        console.error('Webhook Error:', error);
+        console.error('Webhook processing error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

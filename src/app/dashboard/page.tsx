@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
+import { fetchApi } from "@/lib/api";
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -48,52 +49,44 @@ export default function DashboardPage() {
     useEffect(() => {
         async function loadDashboard() {
             setLoading(true);
-            const { data: { session } } = await supabase.auth.getSession();
-
-            if (!session) {
-                router.push('/login');
-                return;
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+    
+                if (!session) {
+                    router.push('/login');
+                    return;
+                }
+    
+                const currentUser = session.user;
+                setUser(currentUser);
+    
+                // Fetch Profile from Java Backend
+                const profileData = await fetchApi('/profiles/me');
+                setProfile(profileData);
+                if (profileData?.whatsapp_number) {
+                    setWhatsappNumber(profileData.whatsapp_number.replace('+', ''));
+                }
+    
+                // Fetch Receipts from Java Backend
+                const receipts = await fetchApi('/receipts');
+                setRecentReceipts(receipts?.slice(0, 5) || []);
+    
+                // Fetch Expenses from Java Backend
+                const expenses = await fetchApi('/expenses');
+    
+                const totalExp = expenses?.reduce((acc: any, curr: any) => acc + Number(curr.amount), 0) || 0;
+    
+                setStats({
+                    totalRevenue: 1250000, // Placeholder until revenue data exists
+                    totalExpenses: totalExp,
+                    netProfit: 1250000 - totalExp,
+                    processedReceipts: receipts?.filter((r: any) => r.status === 'completed').length || 0
+                });
+            } catch (err) {
+                console.error("Failed to load dashboard data:", err);
+            } finally {
+                setLoading(false);
             }
-
-            const currentUser = session.user;
-            setUser(currentUser);
-
-            // Fetch Profile
-            const { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', currentUser.id)
-                .single();
-            setProfile(profileData);
-            if (profileData?.whatsapp_number) {
-                setWhatsappNumber(profileData.whatsapp_number.replace('+', ''));
-            }
-
-            // Fetch Receipts
-            const { data: receipts } = await supabase
-                .from('receipts')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .order('created_at', { ascending: false })
-                .limit(5);
-            setRecentReceipts(receipts || []);
-
-            // Fetch Expenses for Stats
-            const { data: expenses } = await supabase
-                .from('expenses')
-                .select('amount')
-                .eq('user_id', currentUser.id);
-
-            const totalExp = expenses?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
-
-            setStats({
-                totalRevenue: 1250000, // Placeholder until revenue data exists
-                totalExpenses: totalExp,
-                netProfit: 1250000 - totalExp,
-                processedReceipts: receipts?.filter(r => r.status === 'completed').length || 0
-            });
-
-            setLoading(false);
         }
         loadDashboard();
     }, [router]);
@@ -142,21 +135,20 @@ export default function DashboardPage() {
         
         try {
             const formattedNumber = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ whatsapp_number: formattedNumber })
-                .eq('id', user.id);
+            await fetchApi('/profiles/me', {
+                method: 'PUT',
+                body: JSON.stringify({ whatsapp_number: formattedNumber })
+            });
 
-            if (updateError) throw updateError;
-
-            // Update local profile state
-            setProfile({ ...profile, whatsapp_number: formattedNumber });
+            // Update local profile state safely
+            setProfile((prev: any) => ({ ...prev, whatsapp_number: formattedNumber }));
             setShowWhatsappModal(false);
 
             setTimeout(() => {
-                window.open(`https://wa.me/${whatsappNumber.replace('+', '')}?text=Hello%20OpsCopilot!%20I'd%20like%20to%20receive%20daily%20insights%20and%20alerts%20on%20this%20number.`, '_blank');
+                const copilotBotNumber = '2348000000000'; 
+                window.open(`https://wa.me/${copilotBotNumber}?text=Hello%20OpsCopilot!%20Please%20activate%20my%20daily%20AI%20insights%20for%20number%20${formattedNumber}.`, '_blank');
                 setIsConnectingWhatsapp(false);
-            }, 1200);
+            }, 600);
         } catch (err: any) {
             alert(`Error connecting WhatsApp: ${err.message}`);
             setIsConnectingWhatsapp(false);
@@ -493,12 +485,15 @@ export default function DashboardPage() {
                             </div>
                             <CardTitle className="text-xl">Connect WhatsApp</CardTitle>
                             <CardDescription className="text-slate-400">
-                                Enter your business number to start receiving daily AI insights and critical alerts.
+                                Receive automated business insights
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
+                            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm leading-relaxed border border-blue-100">
+                                <strong>How it works:</strong> OpsCopilot acts as your 24/7 AI manager. By connecting your number, the AI will automatically message you when it detects opportunities, risks, or overdue tasks based on your live data.
+                            </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Business Phone Number</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Your WhatsApp Number</label>
                                 <div className="relative">
                                     <Input
                                         type="text"
@@ -515,8 +510,9 @@ export default function DashboardPage() {
                                 <Button
                                     className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold text-sm shadow-lg shadow-primary/20"
                                     onClick={handleFinalizeWhatsapp}
+                                    disabled={isConnectingWhatsapp || !whatsappNumber}
                                 >
-                                    Continue to WhatsApp
+                                    {isConnectingWhatsapp ? 'Saving...' : 'Connect & Message Bot'}
                                 </Button>
                                 <Button
                                     variant="ghost"

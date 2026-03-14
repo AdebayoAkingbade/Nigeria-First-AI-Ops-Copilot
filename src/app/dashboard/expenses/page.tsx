@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import React from "react";
+import { usePaystackPayment } from "react-paystack";
+import { fetchApi } from "@/lib/api";
 import {
     Search,
     Filter,
@@ -28,7 +31,31 @@ export default function ExpensesPage() {
     const [loading, setLoading] = useState(true);
     const [expenses, setExpenses] = useState<any[]>([]);
     const [totalExpenses, setTotalExpenses] = useState(0);
+
+    // Paystack Identity Config
+    const paystackConfig = {
+        reference: `bank_sync_${Date.now()}`,
+        email: 'adebayo@business.com', // Would come from profile naturally
+        amount: 5000,   // Small verification charge (e.g. NGN 50)
+        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    };
+    const initializePayment = usePaystackPayment(paystackConfig);
+
+    const handlePaystackSuccess = async (reference: any) => {
+        try {
+            await fetchApi('/paystack/verify-identity', { method: 'POST' });
+            alert("Bank connected securely via Paystack!");
+            setShowConnectBank(false);
+        } catch (err: any) {
+            alert(`Verification failed: ${err.message}`);
+        }
+    };
+
+    const handlePaystackClose = () => {
+        console.log("Paystack closed");
+    };
     const [searchQuery, setSearchQuery] = useState('');
+    const [monoInstance, setMonoInstance] = useState<any>(null);
 
     // Modal states
     const [showAddExpense, setShowAddExpense] = useState(false);
@@ -67,18 +94,15 @@ export default function ExpensesPage() {
     }, []);
 
     async function fetchExpenses() {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data } = await supabase
-            .from('expenses')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .order('transaction_date', { ascending: false });
-
-        setExpenses(data || []);
-        setTotalExpenses(data?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0);
-        setLoading(false);
+        try {
+            const data = await fetchApi('/expenses');
+            setExpenses(data || []);
+            setTotalExpenses(data?.reduce((acc: any, curr: any) => acc + Number(curr.amount), 0) || 0);
+        } catch (err) {
+            console.error("Failed to fetch expenses:", err);
+        } finally {
+            setLoading(false);
+        }
     }
 
     const handleExport = () => {
@@ -107,23 +131,22 @@ export default function ExpensesPage() {
             return;
         }
         setSubmitting(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setSubmitting(false); return; }
+        try {
+            await fetchApi('/expenses', {
+                method: 'POST',
+                body: JSON.stringify({
+                    merchant_name: newExpense.merchant_name,
+                    category: newExpense.category,
+                    amount: parseFloat(newExpense.amount),
+                    date: newExpense.transaction_date, // mapping to new entity logic
+                }),
+            });
 
-        const { error } = await supabase.from('expenses').insert({
-            user_id: session.user.id,
-            merchant_name: newExpense.merchant_name,
-            category: newExpense.category,
-            amount: parseFloat(newExpense.amount),
-            transaction_date: newExpense.transaction_date,
-        });
-
-        if (error) {
-            alert(`Error: ${error.message}`);
-        } else {
             setShowAddExpense(false);
             setNewExpense({ merchant_name: '', category: 'General', amount: '', transaction_date: new Date().toISOString().split('T')[0] });
             await fetchExpenses();
+        } catch (error: any) {
+            alert(`Error: ${error.message}`);
         }
         setSubmitting(false);
     };
@@ -491,7 +514,7 @@ export default function ExpensesPage() {
                                     </div>
                                     <div>
                                         <CardTitle>Connect Your Bank</CardTitle>
-                                        <CardDescription>Auto-import all transactions</CardDescription>
+                                        <CardDescription>Auto-import all transactions securely via Mono</CardDescription>
                                     </div>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => setShowConnectBank(false)}>
@@ -500,30 +523,37 @@ export default function ExpensesPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-6 space-y-5">
-                            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                <span className="text-amber-600 text-xs font-bold">⚡ COMING SOON</span>
-                                <span className="text-amber-700 text-xs">Bank sync is in beta. We'll notify you first!</span>
-                            </div>
-                            <p className="text-sm text-slate-500">Select your bank to be notified when it's supported:</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                {nigerianBanks.map((bank, i) => (
-                                    <button
+                            <p className="text-sm text-slate-500 text-center mb-2">We support all major Nigerian banks through our secure partner, Mono.</p>
+                            
+                            <div className="grid grid-cols-2 gap-3 mb-6 relative">
+                                {/* Visual fade overlay for bank list */}
+                                <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none"></div>
+                                {nigerianBanks.slice(0, 4).map((bank, i) => (
+                                    <div
                                         key={i}
-                                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all hover:scale-105 ${bank.color}`}
+                                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-bold opacity-70 grayscale hover:grayscale-0 ${bank.color}`}
                                     >
                                         <span className="text-xl">{bank.logo}</span>
                                         <span>{bank.name}</span>
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
+                            
                             <Button
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
-                                onClick={() => setShowConnectBank(false)}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 shadow-lg shadow-indigo-200"
+                                onClick={() => {
+                                    if (monoInstance) {
+                                        monoInstance.open();
+                                    } else {
+                                        alert("Mono is not configured. Please add NEXT_PUBLIC_MONO_PUBLIC_KEY to .env.local");
+                                    }
+                                }}
                             >
-                                <CheckCircle2 className="mr-2 h-4 w-4" /> Notify Me When Ready
+                                <CheckCircle2 className="mr-2 h-5 w-5" /> Proceed with Mono
                             </Button>
                         </CardContent>
                     </Card>
+
                 </div>
             )}
         </div>

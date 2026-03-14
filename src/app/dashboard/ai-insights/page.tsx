@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
+import { fetchApi } from "@/lib/api";
 
 const insightTemplates = [
     {
@@ -87,15 +88,16 @@ export default function AIInsightsPage() {
 
     useEffect(() => {
         async function loadProfile() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            setUserEmail(session.user.email || '');
-            const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-            if (data) {
-                setProfile(data);
-                if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number.replace('+', ''));
-                if (data.whatsapp_number) setWhatsappAlerts(true);
-                if (data.plan === 'pro') setUserPlan('pro');
+            try {
+                const data = await fetchApi('/profiles/me');
+                if (data) {
+                    setProfile(data);
+                    if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number.replace('+', ''));
+                    if (data.whatsapp_number) setWhatsappAlerts(true);
+                    if (data.plan === 'pro') setUserPlan('pro');
+                }
+            } catch (err) {
+                console.error("Failed to load profile:", err);
             }
         }
         loadProfile();
@@ -113,15 +115,18 @@ export default function AIInsightsPage() {
     const initializePayment = usePaystackPayment(paystackConfig);
 
     const handlePaystackSuccess = useCallback(async (reference: any) => {
-        // Payment succeeded — upgrade in Supabase
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        await supabase
-            .from('profiles')
-            .update({ plan: 'pro', plan_activated_at: new Date().toISOString() })
-            .eq('id', session.user.id);
-        setUserPlan('pro');
-        setShowUpgrade(false);
+        try {
+            // Payment succeeded — upgrade in Java backend
+            await fetchApi('/profiles/me', {
+                method: 'PUT',
+                body: JSON.stringify({ plan: 'pro' })
+            });
+            setUserPlan('pro');
+            setShowUpgrade(false);
+        } catch (err) {
+            console.error("Failed to upgrade plan:", err);
+            alert("Payment successful, but plan upgrade failed. Please contact support.");
+        }
     }, []);
 
     const handlePaystackClose = useCallback(() => {
@@ -153,16 +158,22 @@ export default function AIInsightsPage() {
             return;
         }
         setSavingWhatsapp(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setSavingWhatsapp(false); return; }
-
-        const formatted = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
-        const { error } = await supabase.from('profiles').update({ whatsapp_number: formatted }).eq('id', session.user.id);
-        if (error) {
-            alert(`Error: ${error.message}`);
-        } else {
+        
+        try {
+            const formatted = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
+            await fetchApi('/profiles/me', {
+                method: 'PUT',
+                body: JSON.stringify({ whatsapp_number: formatted })
+            });
+            
+            setProfile((prev: any) => ({ ...prev, whatsapp_number: formatted }));
+            setWhatsappAlerts(true);
             setShowWhatsapp(false);
-            window.open(`https://wa.me/${whatsappNumber.replace('+', '')}?text=Hello%20OpsCopilot!%20I'd%20like%20to%20receive%20daily%20insights.`, '_blank');
+            // In a real app, this would be the business's official verified Twilio/WhatsApp Business API number
+            const copilotBotNumber = '2348000000000'; 
+            window.open(`https://wa.me/${copilotBotNumber}?text=Hello%20OpsCopilot!%20Please%20activate%20my%20daily%20AI%20insights%20for%20number%20${formatted}.`, '_blank');
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
         }
         setSavingWhatsapp(false);
     };
@@ -412,7 +423,7 @@ export default function AIInsightsPage() {
                                     </div>
                                     <div>
                                         <CardTitle className="text-white">Connect WhatsApp</CardTitle>
-                                        <CardDescription className="text-slate-400">Get daily AI insights on WhatsApp</CardDescription>
+                                        <CardDescription className="text-slate-400">Receive automated business insights</CardDescription>
                                     </div>
                                 </div>
                                 <Button variant="ghost" size="icon" className="text-white/50 hover:text-white hover:bg-white/10" onClick={() => setShowWhatsapp(false)}>
@@ -421,8 +432,11 @@ export default function AIInsightsPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-6 space-y-5">
+                            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm leading-relaxed border border-blue-100">
+                                <strong>How it works:</strong> OpsCopilot acts as your 24/7 AI manager. By connecting your number, the AI will automatically message you when it detects opportunities, risks, or overdue tasks based on your live data.
+                            </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Business Phone Number</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Your WhatsApp Number</label>
                                 <Input
                                     type="text"
                                     placeholder="e.g. 2348012345678"
@@ -437,9 +451,9 @@ export default function AIInsightsPage() {
                                 <Button
                                     className="flex-1 bg-primary hover:bg-primary/90"
                                     onClick={handleSaveWhatsapp}
-                                    disabled={savingWhatsapp}
+                                    disabled={savingWhatsapp || !whatsappNumber}
                                 >
-                                    {savingWhatsapp ? 'Saving...' : 'Continue to WhatsApp'}
+                                    {savingWhatsapp ? 'Saving...' : 'Connect & Message Bot'}
                                 </Button>
                             </div>
                         </CardContent>
