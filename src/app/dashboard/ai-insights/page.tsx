@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { usePaystackPayment } from "react-paystack";
 import {
     Brain,
     Sparkles,
@@ -77,6 +78,8 @@ export default function AIInsightsPage() {
     const [whatsappNumber, setWhatsappNumber] = useState('234');
     const [savingWhatsapp, setSavingWhatsapp] = useState(false);
     const [profile, setProfile] = useState<any>(null);
+    const [userEmail, setUserEmail] = useState('');
+    const [userPlan, setUserPlan] = useState<'starter' | 'pro'>('starter');
 
     // Settings toggles
     const [emailSummaries, setEmailSummaries] = useState(false);
@@ -86,15 +89,52 @@ export default function AIInsightsPage() {
         async function loadProfile() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
+            setUserEmail(session.user.email || '');
             const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
             if (data) {
                 setProfile(data);
                 if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number.replace('+', ''));
                 if (data.whatsapp_number) setWhatsappAlerts(true);
+                if (data.plan === 'pro') setUserPlan('pro');
             }
         }
         loadProfile();
     }, []);
+
+    // ─── Paystack payment config ───
+    const PRO_PRICE_KOBO = 1500000; // ₦15,000 in kobo
+    const paystackConfig = {
+        reference: `pro_${Date.now()}`,
+        email: userEmail,
+        amount: PRO_PRICE_KOBO,
+        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+        metadata: { plan: 'pro' } as any,
+    };
+    const initializePayment = usePaystackPayment(paystackConfig);
+
+    const handlePaystackSuccess = useCallback(async (reference: any) => {
+        // Payment succeeded — upgrade in Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        await supabase
+            .from('profiles')
+            .update({ plan: 'pro', plan_activated_at: new Date().toISOString() })
+            .eq('id', session.user.id);
+        setUserPlan('pro');
+        setShowUpgrade(false);
+    }, []);
+
+    const handlePaystackClose = useCallback(() => {
+        // User closed the Paystack popup without paying — do nothing
+    }, []);
+
+    const handleGetPro = () => {
+        if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY === 'pk_test_REPLACE_WITH_YOUR_KEY') {
+            alert('Paystack is not yet configured. Please add your NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY to .env.local.');
+            return;
+        }
+        initializePayment({ onSuccess: handlePaystackSuccess, onClose: handlePaystackClose });
+    };
 
     const handleRegenerate = async () => {
         setIsRegenerating(true);
