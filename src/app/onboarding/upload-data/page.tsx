@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UploadCloud, FileText, Smartphone, Receipt, Lock, Info, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fetchApi } from "@/lib/api";
 import { nanoid } from "nanoid";
 
 export default function UploadDataPage() {
@@ -22,13 +23,10 @@ export default function UploadDataPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
-                // Check if already has data
-                const { count } = await supabase
-                    .from('receipts')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id);
+                // Check if already has data via Java API
+                const receipts = await fetchApi('/receipts').catch(() => []);
                 
-                if (count && count > 0) {
+                if (receipts && receipts.length > 0) {
                     router.push('/dashboard');
                     return;
                 }

@@ -15,7 +15,7 @@ public class ReceiptController {
     private ReceiptRepository receiptRepository;
 
     @GetMapping
-    public ResponseEntity<?> getMyReceipts(@AuthenticationPrincipal String userId) {
+    public ResponseEntity<?> getMyReceipts(@AuthenticationPrincipal(expression = "subject") String userId) {
         return ResponseEntity.ok(receiptRepository.findByUserId(userId));
     }
 }

@@ -34,4 +34,6 @@ public class Receipt {
     public void setContent_type(String content_type) { this.content_type = content_type; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public LocalDateTime getCreated_at() { return created_at; }
+    public void setCreated_at(LocalDateTime created_at) { this.created_at = created_at; }
 }

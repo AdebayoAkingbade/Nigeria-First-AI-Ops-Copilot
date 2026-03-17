@@ -35,4 +35,8 @@ public class Expense {
     public void setAmount(String amount) { this.amount = amount; }
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
+    public LocalDateTime getCreated_at() { return created_at; }
+    public void setCreated_at(LocalDateTime created_at) { this.created_at = created_at; }
+    public LocalDateTime getUpdated_at() { return updated_at; }
+    public void setUpdated_at(LocalDateTime updated_at) { this.updated_at = updated_at; }
 }

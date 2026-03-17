@@ -17,12 +17,12 @@ public class ExpenseController {
     private ExpenseRepository expenseRepository;
 
     @GetMapping
-    public ResponseEntity<?> getMyExpenses(@AuthenticationPrincipal String userId) {
+    public ResponseEntity<?> getMyExpenses(@AuthenticationPrincipal(expression = "subject") String userId) {
         return ResponseEntity.ok(expenseRepository.findByUserId(userId));
     }
 
     @PostMapping
-    public ResponseEntity<?> createExpense(@AuthenticationPrincipal String userId, @RequestBody Expense expense) {
+    public ResponseEntity<?> createExpense(@AuthenticationPrincipal(expression = "subject") String userId, @RequestBody Expense expense) {
         expense.setUser_id(userId);
         if (expense.getCreated_at() == null) expense.setCreated_at(LocalDateTime.now());
         expense.setUpdated_at(LocalDateTime.now());

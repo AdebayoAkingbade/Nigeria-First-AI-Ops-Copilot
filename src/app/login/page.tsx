@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
+import { fetchApi } from "@/lib/api";
 import { Loader2, Brain } from "lucide-react";
 
 export default function LoginPage() {
@@ -21,38 +22,17 @@ export default function LoginPage() {
 
     const checkOnboardingStatusAndRedirect = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            // 1. Check profile for business info
-            // Use maybeSingle to avoid errors if NO profile exists yet
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('business_name')
-                .eq('id', user.id)
-                .maybeSingle();
-
-            if (profileError) {
-                console.error("Profile fetch error:", profileError);
-                // If there's an error, we might want to let them go to business-info as a fallback
-                router.push('/onboarding/business-info');
-                return;
-            }
+            // Fetch Profile from Java Backend
+            // This is more robust as it uses our backend logic
+            const profile = await fetchApi('/profiles/me').catch(() => null);
 
             if (!profile || !profile.business_name) {
                 router.push('/onboarding/business-info');
                 return;
             }
 
-            // 2. Check if they have uploaded any data
-            // Fetch top 1 to actually check existence rather than just count (more robust in some clients)
-            const { data: receipts, error: countError } = await supabase
-                .from('receipts')
-                .select('id')
-                .eq('user_id', user.id)
-                .limit(1);
-
-            if (countError) console.error("Receipts check error:", countError);
+            // 2. Check if they have uploaded any data (Receipts) via Java API
+            const receipts = await fetchApi('/receipts').catch(() => []);
 
             if (!receipts || receipts.length === 0) {
                 router.push('/onboarding/upload-data');
@@ -63,7 +43,7 @@ export default function LoginPage() {
             router.push('/dashboard');
         } catch (err) {
             console.error("Redirection logic failed:", err);
-            // Default fallback
+            // Default fallback if API fails but user is authenticated
             router.push('/onboarding/business-info');
         }
     };

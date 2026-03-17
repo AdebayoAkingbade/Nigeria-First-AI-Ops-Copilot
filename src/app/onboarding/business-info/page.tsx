@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select-native";
 import { Textarea } from "@/components/ui/textarea";
 import { Info, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fetchApi } from "@/lib/api";
 
 export default function BusinessInfoPage() {
     const router = useRouter();
@@ -49,24 +50,14 @@ export default function BusinessInfoPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
-                // Pre-fill if profile exists
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', user.id)
-                    .maybeSingle();
+                // Fetch Profile from Java Backend instead of direct Supabase
+                const profile = await fetchApi('/profiles/me').catch(() => null);
 
                 if (profile && profile.business_name) {
-                    // If already filled, check if they have receipts, but avoid loops
-                    // If they are on this page, it's likely they want to edit OR they were redirected here incorrectly.
-                    // To prevent loops, we ONLY redirect if they aren't manually coming back here.
-                    // Actually, for consistency with LoginPage, we redirect appropriately:
-                    const { count } = await supabase
-                        .from('receipts')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('user_id', user.id);
+                    // Check receipts via Java API
+                    const receipts = await fetchApi('/receipts').catch(() => []);
                     
-                    if (count && count > 0) {
+                    if (receipts && receipts.length > 0) {
                         router.push('/dashboard');
                         return;
                     } else {
@@ -103,10 +94,11 @@ export default function BusinessInfoPage() {
         setError(null);
 
         try {
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: userId,
+            // Use Java Backend API for persistence
+            // Note: We mapping camelCase to snake_case for the API
+            await fetchApi('/profiles/me', {
+                method: 'PUT',
+                body: JSON.stringify({
                     business_name: formData.businessName,
                     business_type: formData.businessType,
                     industry: formData.industry,
@@ -114,11 +106,9 @@ export default function BusinessInfoPage() {
                     incorporation_date: formData.date || null,
                     business_size: formData.size,
                     monthly_revenue_range: formData.revenue,
-                    business_goals: formData.goals,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'id' });
-
-            if (updateError) throw updateError;
+                    business_goals: formData.goals
+                })
+            });
 
             router.push('/onboarding/upload-data');
         } catch (err: any) {

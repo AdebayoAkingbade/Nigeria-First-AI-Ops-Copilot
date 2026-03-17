@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/lib/supabase";
+import { fetchApi } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
 export default function AccountSetupPage() {
@@ -27,42 +28,23 @@ export default function AccountSetupPage() {
 
     const checkOnboardingStatusAndRedirect = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            // 1. Check profile for business info
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('business_name')
-                .eq('id', user.id)
-                .maybeSingle();
-
-            if (profileError) {
-                console.error("Profile check error:", profileError);
-                router.push('/onboarding/business-info');
-                return;
-            }
+            // Fetch Profile from Java Backend
+            const profile = await fetchApi('/profiles/me').catch(() => null);
 
             if (!profile || !profile.business_name) {
                 router.push('/onboarding/business-info');
                 return;
             }
 
-            // 2. Check if they have uploaded any data
-            const { data: receipts, error: countError } = await supabase
-                .from('receipts')
-                .select('id')
-                .eq('user_id', user.id)
-                .limit(1);
-
-            if (countError) console.error("Receipts check error:", countError);
+            // check receipts via Java API
+            const receipts = await fetchApi('/receipts').catch(() => []);
 
             if (!receipts || receipts.length === 0) {
                 router.push('/onboarding/upload-data');
                 return;
             }
 
-            // 3. All good, go to dashboard
+            // All good
             router.push('/dashboard');
         } catch (err) {
             console.error("Redirection failure:", err);
