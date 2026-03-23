@@ -66,6 +66,9 @@ export default function AccountSetupPage() {
         setLoading(true);
         setError(null);
         try {
+            if (typeof window !== "undefined") {
+                localStorage.setItem("postAuthRedirect", "/onboarding/business-info");
+            }
             const { error: authError } = await supabase.auth.signInWithOAuth({
                 provider,
                 options: {
@@ -86,6 +89,9 @@ export default function AccountSetupPage() {
         setConfirmationRequired(false);
 
         try {
+            if (typeof window !== "undefined") {
+                localStorage.setItem("postAuthRedirect", "/onboarding/business-info");
+            }
             const { data, error: signupError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,

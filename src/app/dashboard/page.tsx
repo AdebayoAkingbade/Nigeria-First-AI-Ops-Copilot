@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { fetchApi } from "@/lib/api";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -179,6 +180,7 @@ export default function DashboardPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <ThemeToggle />
                     <Link href="/onboarding/upload-data">
                         <Button className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
                             <Plus className="mr-2 h-4 w-4" /> Upload Data

@@ -33,10 +33,15 @@ export function HeroSection() {
                                     Start Free Trial
                                 </Button>
                             </Link>
-                             <Button variant="outline" size="lg" className="border-white/60 text-white hover:bg-white/20 hover:text-white h-14 px-8 gap-2 backdrop-blur-sm">
-                                <PlayCircle className="h-5 w-5" />
-                                Watch Demo
-                            </Button>
+                             <Link href="#demo">
+                                <Button
+                                    size="lg"
+                                    className="bg-[#0f766e] text-white hover:bg-[#0d685f] h-14 px-8 gap-2 shadow-lg shadow-emerald-500/20"
+                                >
+                                    <PlayCircle className="h-5 w-5" />
+                                    Watch Demo
+                                </Button>
+                             </Link>
                         </div>
 
                         <div className="flex items-center gap-4 text-sm text-white/60 pt-4">
@@ -49,18 +54,60 @@ export function HeroSection() {
                         </div>
                     </div>
 
-                     <div className="relative mx-auto w-full max-w-[600px] lg:max-w-none animate-in slide-in-from-right duration-700 delay-100">
-                        <div className="relative rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-3 shadow-2xl overflow-hidden group">
-                           <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                           <img 
-                                src="/images/hero-dashboard.png" 
-                                alt="OpsCopilot AI Dashboard" 
-                                className="w-full h-auto rounded-xl shadow-lg ring-1 ring-white/10 transform transition-transform duration-700 group-hover:scale-[1.02]"
-                           />
-                           
-                           {/* Decorative elements */}
-                           <div className="absolute -bottom-6 -right-6 h-32 w-32 bg-secondary/20 blur-3xl rounded-full"></div>
-                           <div className="absolute -top-6 -left-6 h-32 w-32 bg-primary/20 blur-3xl rounded-full"></div>
+                     <div className="relative mx-auto w-full max-w-[620px] lg:max-w-none animate-in slide-in-from-right duration-700 delay-100">
+                        <div className="relative rounded-3xl border border-white/15 bg-white/8 backdrop-blur-lg p-5 shadow-[0_30px_120px_rgba(0,0,0,0.25)] overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-primary/10 to-transparent rounded-3xl"></div>
+                            <div className="grid gap-4">
+                                <div className="rounded-2xl bg-white/90 text-slate-900 p-4 shadow-lg border border-white/40">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sm font-semibold text-slate-600">Today’s Health</p>
+                                        <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold">Stable</span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="rounded-xl bg-emerald-50 p-3">
+                                            <p className="text-xs text-emerald-700">Revenue</p>
+                                            <p className="text-lg font-bold text-emerald-900">₦1.25M</p>
+                                            <p className="text-[11px] text-emerald-700/80">+12.5%</p>
+                                        </div>
+                                        <div className="rounded-xl bg-amber-50 p-3">
+                                            <p className="text-xs text-amber-700">Expenses</p>
+                                            <p className="text-lg font-bold text-amber-900">₦560k</p>
+                                            <p className="text-[11px] text-amber-700/80">-4.1%</p>
+                                        </div>
+                                        <div className="rounded-xl bg-blue-50 p-3">
+                                            <p className="text-xs text-blue-700">Net</p>
+                                            <p className="text-lg font-bold text-blue-900">₦690k</p>
+                                            <p className="text-[11px] text-blue-700/80">+8.4%</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-2xl border border-white/20 bg-slate-900/60 text-white p-4 shadow-inner">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sm font-semibold text-white/80">Cash Flow (7d)</p>
+                                        <span className="text-xs text-emerald-200">Updated 3 mins ago</span>
+                                    </div>
+                                    <div className="h-28 w-full bg-gradient-to-r from-emerald-900/50 via-emerald-700/40 to-emerald-500/30 rounded-xl flex items-end gap-1 p-2">
+                                        {[35,45,30,60,50,80,70].map((v,i)=>(
+                                            <div key={i} className="flex-1 bg-emerald-400/70 rounded-t-lg" style={{height:`${v}%`}}></div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="rounded-2xl border border-white/20 bg-white/80 backdrop-blur p-4 shadow-lg flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-slate-600">WhatsApp daily brief</p>
+                                        <p className="text-base font-semibold text-slate-900">Sent 6:00 AM • 3 insights</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                                        <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                        Live
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="absolute -bottom-10 -right-10 h-40 w-40 bg-emerald-500/20 blur-3xl rounded-full"></div>
+                            <div className="absolute -top-10 -left-10 h-40 w-40 bg-primary/25 blur-3xl rounded-full"></div>
                         </div>
                     </div>
                 </div>
