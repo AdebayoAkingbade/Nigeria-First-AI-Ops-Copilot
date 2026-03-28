@@ -44,7 +44,7 @@ export async function POST(req: Request) {
         if (profileError || !profile) {
             // Unrecognized user
             await client.messages.create({
-                body: "Hello! OpsCopilot doesn't recognize this number. Please log in to your dashboard and connect your WhatsApp number.",
+                body: "Hello! KudiPal doesn't recognize this number. Please log in to your dashboard and connect your WhatsApp number.",
                 from: `whatsapp:${twilioNumber}`,
                 to: twilioFrom
             });
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: `You are OpsCopilot, a professional, friendly AI financial assistant for a Nigerian business owner named ${profile.email}. Their business is called "${businessName}". Keep your answers extremely concise, helpful, and formatted well for WhatsApp (using *bolding* for emphasis). Refer to the business data provided below if relevant.\n\nContext:\n${contextStr}`
+                    content: `You are KudiPal, a friendly, smart, and trustworthy AI money assistant for a Nigerian business owner named ${profile.email}. Their business is called "${businessName}". Keep your answers extremely concise, helpful, and formatted well for WhatsApp (using *bolding* for emphasis). Sound clear, calm, and practical rather than corporate. Refer to the business data provided below if relevant.\n\nContext:\n${contextStr}`
                 },
                 {
                     role: "user",

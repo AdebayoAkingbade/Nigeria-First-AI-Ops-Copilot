@@ -1,6 +1,7 @@
 import { Stepper } from "@/components/onboarding/stepper";
-import { Brain } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { KudiPalLogo } from "@/components/branding/kudipal-logo";
 
 // We need a way to determine current step. 
 // Ideally we check pathname, but Layout receives children.
@@ -22,15 +23,11 @@ export default function OnboardingLayout({
         <div className="min-h-screen bg-gray-50 flex flex-col">
             {/* Simple Header */}
             <header className="bg-white border-b py-4">
-                <div className="container mx-auto px-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-primary rounded-lg p-1.5">
-                            <Brain className="h-5 w-5 text-white" />
-                        </div>
-                        <span className="text-lg font-bold">OpsCopilot</span>
-                    </div>
-                    <Link href="/" className="text-sm text-gray-500 hover:text-foreground">
-                        Back to Business Info
+                <div className="container mx-auto px-4 flex items-center gap-5">
+                    <KudiPalLogo compact />
+                    <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-foreground">
+                        <ChevronLeft className="h-4 w-4" />
+                        Back to home
                     </Link>
                 </div>
             </header>

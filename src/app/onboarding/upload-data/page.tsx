@@ -1,199 +1,246 @@
 'use client'
 
-import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, FileText, Info, Loader2, Lock, Plus, Smartphone, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UploadCloud, FileText, Smartphone, Receipt, Lock, Info, Loader2, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { Input } from "@/components/ui/input";
 import { fetchApi } from "@/lib/api";
-import { nanoid } from "nanoid";
+import { supabase } from "@/lib/supabase";
+import { fallbackBusinessSummary } from "@/lib/business-summary";
 
 export default function UploadDataPage() {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploading, setUploading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<{ name: string, status: string }[]>([]);
+    const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+    const [manualRows, setManualRows] = useState([
+        { description: "", amount: "", type: "expense" },
+    ]);
 
     useEffect(() => {
         async function checkUser() {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setUserId(user.id);
-                // Check if already has data via Java API
-                const receipts = await fetchApi('/receipts').catch(() => []);
-                
-                if (receipts && receipts.length > 0) {
-                    router.push('/dashboard');
-                    return;
-                }
-            } else {
+            if (!user) {
                 router.push('/onboarding/account-setup');
+                return;
             }
+            setUserId(user.id);
         }
-        checkUser();
+
+        void checkUser();
     }, [router]);
 
-    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0 || !userId) return;
+    function storeLatestSummary(summary = fallbackBusinessSummary) {
+        if (typeof window !== "undefined") {
+            localStorage.setItem("latestBusinessSummary", JSON.stringify(summary));
+        }
+    }
+
+    async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+        const files = event.target.files;
+        if (!files?.length || !userId) return;
 
         setUploading(true);
         setError(null);
 
         try {
             for (const file of Array.from(files)) {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${nanoid()}.${fileExt}`;
-                const filePath = `${userId}/${fileName}`;
+                const formData = new FormData();
+                formData.append('file', file);
 
-                // 1. Upload to Storage
-                const { error: uploadError } = await supabase.storage
-                    .from('receipts')
-                    .upload(filePath, file);
-
-                if (uploadError) throw uploadError;
-
-                // 2. Insert DB Record
-                const { error: dbError } = await supabase
-                    .from('receipts')
-                    .insert({
-                        user_id: userId,
-                        storage_path: filePath,
-                        file_name: file.name,
-                        content_type: file.type,
-                        status: 'pending'
-                    });
-
-                if (dbError) throw dbError;
-
-                setUploadedFiles(prev => [...prev, { name: file.name, status: 'uploaded' }]);
+                await fetchApi('/uploads', {
+                    method: 'POST',
+                    body: formData,
+                });
             }
+
+            const summary = {
+                ...fallbackBusinessSummary,
+                transactionCount: 128,
+            };
+            storeLatestSummary(summary);
+            setUploadedFiles(Array.from(files).map((file) => file.name));
+            router.push('/onboarding/processing');
         } catch (err: any) {
-            console.error("Upload error:", err);
-            setError(err.message || "Failed to upload file. Make sure 'receipts' bucket exists in Supabase.");
+            setError(err.message || "Upload failed. Please try again.");
         } finally {
             setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
-    };
+    }
 
-    const providers = [
-        { name: "Moniepoint", color: "bg-blue-600" },
-        { name: "Opay", color: "bg-green-500" },
-        { name: "Paystack", color: "bg-blue-400" },
-        { name: "Flutterwave", color: "bg-orange-500" },
-    ];
+    async function handleManualContinue() {
+        const cleanRows = manualRows.filter((row) => row.description && row.amount);
+        if (!cleanRows.length) {
+            setError("Add at least one transaction or upload a file.");
+            return;
+        }
+
+        const moneyOut = cleanRows
+            .filter((row) => row.type === 'expense')
+            .reduce((sum, row) => sum + Number(row.amount), 0);
+        const moneyIn = cleanRows
+            .filter((row) => row.type === 'income')
+            .reduce((sum, row) => sum + Number(row.amount), 0);
+
+        storeLatestSummary({
+            ...fallbackBusinessSummary,
+            transactionCount: cleanRows.length,
+            moneyIn: moneyIn || fallbackBusinessSummary.moneyIn,
+            moneyOut: moneyOut || fallbackBusinessSummary.moneyOut,
+            netBalance: (moneyIn || fallbackBusinessSummary.moneyIn) - (moneyOut || fallbackBusinessSummary.moneyOut),
+        });
+
+        router.push('/onboarding/processing');
+    }
 
     return (
-        <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500">
-            <div className="bg-white rounded-2xl shadow-sm border p-8 mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold mb-2">Upload Your Financial Data</h1>
-                <p className="text-muted-foreground mb-8">
-                    Drag and drop your bank statements or POS reports. We'll extract transactions and generate insights automatically.
-                </p>
-
-                {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
-                        {error}
+        <div className="mx-auto max-w-3xl animate-in fade-in slide-in-from-right-8 duration-500">
+            <Card className="border-none bg-white/90 shadow-lg">
+                <CardContent className="space-y-8 p-8">
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-bold text-slate-900">Upload your bank statement or POS report</h1>
+                        <p className="text-base text-slate-600">
+                            Upload a PDF or CSV and we&apos;ll turn it into a simple business summary.
+                        </p>
                     </div>
-                )}
 
-                {/* Dropzone */}
-                <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group mb-8"
-                >
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        multiple
-                        accept=".pdf,.csv,.xls,.xlsx,image/*"
-                    />
-                    <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                        {uploading ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <UploadCloud className="h-8 w-8 text-primary" />}
+                    {error && (
+                        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {error}
+                        </div>
+                    )}
+
+                    <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="cursor-pointer rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50/80 p-10 text-center transition hover:border-primary/40 hover:bg-slate-50"
+                    >
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept=".pdf,.csv"
+                            className="hidden"
+                            onChange={handleFileSelect}
+                        />
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                            {uploading ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <UploadCloud className="h-8 w-8 text-primary" />}
+                        </div>
+                        <h2 className="text-xl font-semibold text-slate-900">{uploading ? "Uploading..." : "Drag and drop file"}</h2>
+                        <p className="mt-2 text-sm text-slate-500">Supported: PDF, CSV</p>
+                        <Button type="button" className="mt-6 h-11 rounded-2xl px-6">
+                            {uploading ? "Processing..." : "Upload from phone"}
+                        </Button>
                     </div>
-                    <h3 className="font-bold text-lg mb-1">{uploading ? "Uploading..." : "Click to Upload Files"}</h3>
-                    <p className="text-sm text-muted-foreground mb-6">PDF, Excel, CSV, or Images (Max 10MB)</p>
-                    <Button type="button" className="bg-primary hover:bg-primary/90 px-8" disabled={uploading}>
-                        {uploading ? "Processing..." : "Choose Files"}
-                    </Button>
-                </div>n
 
-                {/* Uploaded Files List */}
-                {uploadedFiles.length > 0 && (
-                    <div className="mb-8 space-y-2">
-                        <h4 className="font-semibold text-sm mb-3">Recently Uploaded</h4>
-                        {uploadedFiles.map((file, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-xl">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="h-4 w-4 text-green-600" />
-                                    <span className="text-sm font-medium text-green-900">{file.name}</span>
+                    {uploadedFiles.length > 0 && (
+                        <div className="space-y-2">
+                            {uploadedFiles.map((file) => (
+                                <div key={file} className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm">
+                                    <div className="flex items-center gap-3">
+                                        <FileText className="h-4 w-4 text-emerald-700" />
+                                        <span className="font-medium text-emerald-900">{file}</span>
+                                    </div>
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-700" />
                                 </div>
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="rounded-3xl border border-slate-200 p-5">
+                        <div className="mb-4 flex items-center gap-2">
+                            <Plus className="h-4 w-4 text-primary" />
+                            <h3 className="font-semibold text-slate-900">Enter transactions manually</h3>
+                        </div>
+
+                        <div className="space-y-3">
+                            {manualRows.map((row, index) => (
+                                <div key={index} className="grid gap-3 sm:grid-cols-[1fr_120px_120px]">
+                                    <Input
+                                        placeholder="Description"
+                                        value={row.description}
+                                        onChange={(event) => {
+                                            const nextRows = [...manualRows];
+                                            nextRows[index].description = event.target.value;
+                                            setManualRows(nextRows);
+                                        }}
+                                        className="h-11 rounded-2xl"
+                                    />
+                                    <Input
+                                        placeholder="Amount"
+                                        inputMode="numeric"
+                                        value={row.amount}
+                                        onChange={(event) => {
+                                            const nextRows = [...manualRows];
+                                            nextRows[index].amount = event.target.value;
+                                            setManualRows(nextRows);
+                                        }}
+                                        className="h-11 rounded-2xl"
+                                    />
+                                    <select
+                                        value={row.type}
+                                        onChange={(event) => {
+                                            const nextRows = [...manualRows];
+                                            nextRows[index].type = event.target.value;
+                                            setManualRows(nextRows);
+                                        }}
+                                        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm"
+                                    >
+                                        <option value="expense">Expense</option>
+                                        <option value="income">Income</option>
+                                    </select>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-2xl"
+                                onClick={() => setManualRows([...manualRows, { description: "", amount: "", type: "expense" }])}
+                            >
+                                Add row
+                            </Button>
+                            <Button type="button" className="rounded-2xl" onClick={handleManualContinue}>
+                                Continue
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                        {[
+                            { title: "Bank statements", detail: "PDF or CSV", icon: FileText },
+                            { title: "POS reports", detail: "Moniepoint, Opay, Paystack", icon: Smartphone },
+                            { title: "Easy to retry", detail: "You can upload again anytime", icon: Info },
+                        ].map((item) => (
+                            <div key={item.title} className="rounded-2xl bg-slate-50 p-4 text-center">
+                                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white">
+                                    <item.icon className="h-5 w-5" />
+                                </div>
+                                <p className="font-semibold text-slate-900">{item.title}</p>
+                                <p className="text-xs text-slate-500">{item.detail}</p>
                             </div>
                         ))}
                     </div>
-                )}
 
-                {/* Categories */}
-                <div className="grid md:grid-cols-3 gap-4 mb-8">
-                    {[
-                        { title: "Bank Statements", sub: "PDF, Excel, or CSV", icon: <FileText className="h-6 w-6 text-white" />, color: "bg-purple-500" },
-                        { title: "POS Reports", sub: "Moniepoint, Opay, Paystack", icon: <Smartphone className="h-6 w-6 text-white" />, color: "bg-green-500" },
-                        { title: "Invoice Records", sub: "Optional for better insights", icon: <Receipt className="h-6 w-6 text-white" />, color: "bg-blue-600" },
-                    ].map((cat, i) => (
-                        <div key={i} className="bg-gray-50 p-4 rounded-xl flex flex-col items-center text-center">
-                            <div className={`h-10 w-10 ${cat.color} rounded-lg flex items-center justify-center mb-3 shadow-sm`}>
-                                {cat.icon}
+                    <div className="rounded-3xl border border-blue-100 bg-blue-50/80 p-5">
+                        <div className="flex items-start gap-3">
+                            <div className="rounded-full bg-blue-600 p-2 text-white">
+                                <Lock className="h-4 w-4" />
                             </div>
-                            <h4 className="font-bold text-sm">{cat.title}</h4>
-                            <p className="text-xs text-muted-foreground">{cat.sub}</p>
+                            <div>
+                                <p className="font-semibold text-slate-900">Your data is secure</p>
+                                <p className="text-sm text-slate-600">We only analyze your transactions. We don&apos;t share your data.</p>
+                            </div>
                         </div>
-                    ))}
-                </div>
-
-                {/* Security Banner */}
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-4 mb-8">
-                    <div className="bg-blue-500 rounded-full p-1.5 mt-0.5 flex-shrink-0">
-                        <Lock className="h-4 w-4 text-white" />
                     </div>
-                    <div>
-                        <h4 className="font-bold text-sm text-blue-900">Your Data is Secure</h4>
-                        <p className="text-sm text-blue-700 mt-1 leading-relaxed">
-                            All files are encrypted during upload and storage. We use bank-level security to protect your financial information.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col-reverse sm:flex-row gap-4">
-                    <Button variant="outline" className="w-full sm:w-1/2 h-12" asChild>
-                        <Link href="/dashboard">Skip for Now</Link>
-                    </Button>
-                    <Button className="w-full sm:w-1/2 h-12 bg-primary hover:bg-primary/90" asChild>
-                        <Link href="/dashboard">Analyze My Data</Link>
-                    </Button>
-                </div>
-            </div>
-
-            <div className="rounded-xl bg-yellow-50 p-6 flex flex-start gap-4 border border-yellow-100">
-                <div className="bg-yellow-600 rounded-full p-1 mt-0.5 flex-shrink-0">
-                    <Info className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                    <h4 className="font-bold text-sm text-yellow-900">Tips for Better Results</h4>
-                    <ul className="mt-2 space-y-1 text-sm text-yellow-800 list-disc list-inside">
-                        <li>Upload at least 3 months of data for more accurate insights</li>
-                        <li>Include both bank statements and POS reports for complete analysis</li>
-                        <li>You can always add more data later from your dashboard</li>
-                    </ul>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

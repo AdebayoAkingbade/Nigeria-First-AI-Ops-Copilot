@@ -10,7 +10,7 @@ export function VideoDemo() {
     const tutorials = [
         {
             title: "Daily AI Insights",
-            description: "OpsCopilot automatically scans your POS and bank data every 24 hours.",
+            description: "KudiPal automatically scans your POS and bank data every 24 hours.",
             img: "/images/tutorial-insights.png",
             steps: [
                 "Real-time monitoring of POS transactions.",
@@ -56,7 +56,7 @@ export function VideoDemo() {
             <div className="container mx-auto px-4 text-center">
                 <div className="mb-12">
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                        See <span className="text-primary">OpsCopilot</span> in Action
+                        See <span className="text-primary">KudiPal</span> in Action
                     </h2>
                     <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                         Watch how Nigerian SMBs are automating their operations, cutting costs, and growing profits in minutes.
@@ -85,7 +85,7 @@ export function VideoDemo() {
                             Featured Tutorial
                         </div>
                         <p className="text-white font-bold text-3xl mb-1 tracking-tight">Daily AI Insights</p>
-                        <p className="text-white/70 text-base max-w-md font-medium">See how OpsCopilot transforms your raw business data into actionable growth strategies.</p>
+                        <p className="text-white/70 text-base max-w-md font-medium">See how KudiPal transforms your raw business data into actionable growth strategies.</p>
                     </div>
                 </div>
 

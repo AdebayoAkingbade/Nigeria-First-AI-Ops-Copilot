@@ -5,9 +5,19 @@ import { cookies } from 'next/headers'
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
+    const error = searchParams.get('error')
+    const errorDescription = searchParams.get('error_description')
     // if "next" is in param, use it as the redirect URL
     // Default to business-info to ensure newly confirmed users start there
     const next = searchParams.get('next') ?? '/onboarding/business-info'
+
+    if (error) {
+        const params = new URLSearchParams({
+            error: 'oauth_callback',
+            message: errorDescription ?? error,
+        })
+        return NextResponse.redirect(`${origin}/login?${params.toString()}`)
+    }
 
     if (code) {
         const cookieStore = await cookies()
@@ -32,8 +42,17 @@ export async function GET(request: Request) {
         if (!error) {
             return NextResponse.redirect(`${origin}${next}`)
         }
+
+        const params = new URLSearchParams({
+            error: 'oauth_callback',
+            message: error.message,
+        })
+        return NextResponse.redirect(`${origin}/login?${params.toString()}`)
     }
 
-    // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/onboarding/account-setup?error=auth_failed`)
+    const params = new URLSearchParams({
+        error: 'oauth_callback',
+        message: 'No authorization code was returned by the provider.',
+    })
+    return NextResponse.redirect(`${origin}/login?${params.toString()}`)
 }

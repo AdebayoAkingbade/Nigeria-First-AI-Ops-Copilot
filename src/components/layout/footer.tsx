@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Brain, Twitter, Facebook, Instagram, Linkedin } from "lucide-react";
+import { Twitter, Facebook, Instagram, Linkedin } from "lucide-react";
+import { KudiPalLogo } from "@/components/branding/kudipal-logo";
 
 export function Footer() {
     return (
@@ -7,14 +8,14 @@ export function Footer() {
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-4 gap-12 mb-12">
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-primary rounded-lg p-1.5">
-                                <Brain className="h-6 w-6 text-white" />
-                            </div>
-                            <span className="text-xl font-bold tracking-tight">OpsCopilot</span>
-                        </div>
+                        <KudiPalLogo
+                            panelClassName="px-3 shadow-sm"
+                            subtitleClassName="text-gray-400"
+                            showSubtitle
+                            subtitle="Smart, simple money support for everyday business decisions"
+                        />
                         <p className="text-gray-400 text-sm leading-relaxed">
-                            Your AI Operations Manager. Automating logistics, finance, and growth for African SMBs.
+                            Chat-first money support for Nigerian SMBs. Track cash flow, spot issues early, and stay in control.
                         </p>
                         <div className="flex gap-4">
                             <Twitter className="h-5 w-5 text-gray-400 hover:text-white cursor-pointer" />
@@ -55,7 +56,7 @@ export function Footer() {
                 </div>
 
                 <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-                    © {new Date().getFullYear()} OpsCopilot. All rights reserved.
+                    © {new Date().getFullYear()} KudiPal. All rights reserved.
                 </div>
             </div>
         </footer>

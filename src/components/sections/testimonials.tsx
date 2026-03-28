@@ -5,7 +5,7 @@ export function Testimonials() {
         {
             name: "Adebayo O.",
             role: "Retail Store Owner",
-            text: "OpsCopilot saved me from hiring an accountant. It automatically tracks my sales and tells me exactly what to restock.",
+            text: "KudiPal saved me from hiring an accountant. It automatically tracks my sales and tells me exactly what to restock.",
             img: "/images/avatar-adebayo.png",
         },
         {
@@ -32,7 +32,7 @@ export function Testimonials() {
                     <div className="flex justify-center gap-1 text-yellow-500 mb-2">
                         {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-5 w-5 fill-current" />)}
                     </div>
-                    <p className="text-gray-400">Join over 500 businesses growing with OpsCopilot</p>
+                    <p className="text-gray-400">Join over 500 businesses growing with KudiPal</p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">

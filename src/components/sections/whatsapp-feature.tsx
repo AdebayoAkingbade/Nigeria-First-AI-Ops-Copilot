@@ -48,7 +48,7 @@ export function WhatsAppFeature() {
                             <div className="bg-[#ECE5DD] w-full h-full pt-10 px-4 overflow-hidden flex flex-col gap-4">
                                 
                                 <div className="self-start bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] text-sm">
-                                    <p className="font-semibold text-green-600 mb-1">OpsCopilot AI</p>
+                                    <p className="font-semibold text-green-600 mb-1">KudiPal</p>
                                     <p>Good morning! ☀️ Here is your summary for last week (Aug 12 - Aug 18):</p>
                                     <p className="mt-2 font-mono text-xs">
                                         💰 Revenue: ₦450,000<br />

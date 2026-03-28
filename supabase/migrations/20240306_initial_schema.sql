@@ -1,4 +1,4 @@
--- Initial Schema for Nigeria First AI Ops Copilot
+-- Initial Schema for Nigeria First AI KudiPal
 
 -- 1. Profiles table (extends Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.profiles (

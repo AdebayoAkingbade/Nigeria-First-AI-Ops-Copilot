@@ -30,7 +30,7 @@ export function ProblemSolution() {
                         The Problem We Solve
                     </h2>
                     <p className="text-muted-foreground text-lg">
-                        We've seen how Nigerian SMB owners struggle daily. OpsCopilot fixes these operational headaches.
+                        We've seen how Nigerian SMB owners struggle daily. KudiPal turns messy money admin into clear next steps.
                     </p>
                 </div>
 
