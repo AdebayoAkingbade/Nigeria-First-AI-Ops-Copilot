@@ -7,10 +7,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface TransactionRepository extends JpaRepository<Transaction, String> {
+public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
     @Query("SELECT t FROM Transaction t WHERE t.user_id = :userId ORDER BY t.transaction_date DESC, t.created_at DESC")
-    List<Transaction> findByUserId(@Param("userId") String userId);
+    List<Transaction> findByUserId(@Param("userId") UUID userId);
 }

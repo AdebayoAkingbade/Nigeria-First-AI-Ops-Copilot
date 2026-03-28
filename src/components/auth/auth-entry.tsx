@@ -43,15 +43,15 @@ function getFriendlyAuthError(error: unknown, provider?: 'google' | 'facebook') 
     const normalized = message.toLowerCase();
 
     if (normalized.includes("unsupported phone provider")) {
-        return "Phone login is not enabled in Supabase yet. Turn on Phone auth and configure an SMS provider in your Supabase dashboard.";
+        return "Phone login is not enabled in your Supabase project. Please go to your Supabase Dashboard > Authentication > Providers > Phone and enable it, then configure an SMS provider.";
     }
 
     if (normalized.includes("provider is not enabled") || normalized.includes("unsupported provider")) {
-        return `${provider === 'facebook' ? 'Facebook' : provider === 'google' ? 'Google' : 'This'} login is not enabled in Supabase yet.`;
+        return `${provider === 'facebook' ? 'Facebook' : provider === 'google' ? 'Google' : 'This'} login is not enabled in your Supabase project. Please enable it in your Supabase Dashboard under Authentication > Providers.`;
     }
 
     if (normalized.includes("popup") || normalized.includes("redirect")) {
-        return `We couldn't start ${provider ?? "social"} sign in. Please check that the provider redirect URL is configured correctly.`;
+        return `We couldn't start ${provider ?? "social"} sign in. Please check that your Supabase redirect URLs (specifically ${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback) are configured correctly in the dashboard.`;
     }
 
     return message || "We couldn't complete sign in.";
@@ -126,6 +126,7 @@ export function AuthEntry({
                 id: user.id,
                 full_name: fullName,
                 email: user.email ?? null,
+                phone_number: (user.phone ?? e164Phone) || null,
                 whatsapp_number: e164Phone || user.phone || null,
             });
     }
@@ -192,7 +193,10 @@ export function AuthEntry({
                 },
             });
 
-            if (authError) throw authError;
+            if (authError) {
+                throw authError;
+            }
+
             if (data?.url && typeof window !== "undefined") {
                 window.location.assign(data.url);
                 return;

@@ -30,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} antialiased font-sans bg-background text-foreground`}>
+      <body
+        className={`${inter.variable} ${poppins.variable} antialiased font-sans bg-background text-foreground`}
+        suppressHydrationWarning
+      >
         <ThemeProvider>
           {children}
         </ThemeProvider>

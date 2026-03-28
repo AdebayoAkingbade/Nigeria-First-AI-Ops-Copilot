@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/receipts")
 public class ReceiptController {
@@ -16,6 +18,10 @@ public class ReceiptController {
 
     @GetMapping
     public ResponseEntity<?> getMyReceipts(@AuthenticationPrincipal(expression = "subject") String userId) {
-        return ResponseEntity.ok(receiptRepository.findByUserId(userId));
+        try {
+            return ResponseEntity.ok(receiptRepository.findByUserId(UUID.fromString(userId)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(400).body("{\"error\":\"bad_request\",\"message\":\"Invalid user ID format\"}");
+        }
     }
 }

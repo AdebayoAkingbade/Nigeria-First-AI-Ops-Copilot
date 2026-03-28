@@ -38,14 +38,14 @@ export async function GET(request: Request) {
                 },
             }
         )
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (!exchangeError) {
             return NextResponse.redirect(`${origin}${next}`)
         }
 
         const params = new URLSearchParams({
             error: 'oauth_callback',
-            message: error.message,
+            message: exchangeError.message,
         })
         return NextResponse.redirect(`${origin}/login?${params.toString()}`)
     }

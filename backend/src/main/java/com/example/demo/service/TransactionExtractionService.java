@@ -14,11 +14,12 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 public class TransactionExtractionService {
 
-    public List<Transaction> extract(String userId, String receiptId, String fileName, Path filePath) throws IOException {
+    public List<Transaction> extract(UUID userId, UUID receiptId, String fileName, Path filePath) throws IOException {
         String lowerName = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
         if (!lowerName.endsWith(".csv")) {
             throw new IllegalArgumentException("Only CSV extraction is enabled right now for automatic processing.");
@@ -48,7 +49,7 @@ public class TransactionExtractionService {
         return transactions;
     }
 
-    private Transaction buildTransaction(String userId, String receiptId, String fileName, CsvHeader header, List<String> values) {
+    private Transaction buildTransaction(UUID userId, UUID receiptId, String fileName, CsvHeader header, List<String> values) {
         BigDecimal amount = extractAmount(header, values);
         if (amount == null || amount.compareTo(BigDecimal.ZERO) == 0) {
             return null;

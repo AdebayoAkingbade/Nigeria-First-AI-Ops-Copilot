@@ -10,9 +10,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Service
 public class UploadQueueService {
 
-    private final BlockingQueue<String> queue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<UUID> queue = new LinkedBlockingQueue<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private final ReceiptRepository receiptRepository;
@@ -62,11 +62,11 @@ public class UploadQueueService {
         executorService.shutdownNow();
     }
 
-    public void enqueue(String receiptId) {
+    public void enqueue(UUID receiptId) {
         queue.offer(receiptId);
     }
 
-    private void process(String receiptId) {
+    private void process(UUID receiptId) {
         Receipt receipt = receiptRepository.findById(receiptId)
             .orElseThrow(() -> new IllegalArgumentException("Upload job not found: " + receiptId));
 

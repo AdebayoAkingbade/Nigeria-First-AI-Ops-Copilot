@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/uploads")
@@ -43,22 +44,27 @@ public class UploadController {
             return ResponseEntity.badRequest().body(Map.of("error", "Please choose a file to upload."));
         }
 
-        String storagePath = uploadStorageService.store(userId, file);
+        try {
+            UUID uId = UUID.fromString(userId);
+            String storagePath = uploadStorageService.store(userId, file);
 
-        Receipt receipt = new Receipt();
-        receipt.setUser_id(userId);
-        receipt.setStorage_path(storagePath);
-        receipt.setFile_name(file.getOriginalFilename());
-        receipt.setContent_type(file.getContentType());
-        receipt.setStatus("queued");
-        receipt.setCreated_at(LocalDateTime.now());
+            Receipt receipt = new Receipt();
+            receipt.setUser_id(uId);
+            receipt.setStorage_path(storagePath);
+            receipt.setFile_name(file.getOriginalFilename());
+            receipt.setContent_type(file.getContentType());
+            receipt.setStatus("queued");
+            receipt.setCreated_at(LocalDateTime.now());
 
-        Receipt savedReceipt = receiptRepository.save(receipt);
-        uploadQueueService.enqueue(savedReceipt.getId());
+            Receipt savedReceipt = receiptRepository.save(receipt);
+            uploadQueueService.enqueue(savedReceipt.getId());
 
-        return ResponseEntity.accepted().body(Map.of(
-            "message", "Your file has been received and queued for processing.",
-            "receipt", savedReceipt
-        ));
+            return ResponseEntity.accepted().body(Map.of(
+                "message", "Your file has been received and queued for processing.",
+                "receipt", savedReceipt
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(400).body(Map.of("error", "Invalid user ID format"));
+        }
     }
 }

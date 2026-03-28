@@ -1,0 +1,61 @@
+Date,Description,Type,Amount (₦),Balance (₦)
+2025-01-01,Utility Payment,Credit,4834001,54834001
+2025-01-02,Inventory Purchase - Suppliers,Debit,2354059,52479942
+2025-01-03,POS Sales - Bulk Electronics,Credit,4528929,57008871
+2025-01-04,Refund Issued,Credit,3916295,60925166
+2025-01-05,Tax Payment,Debit,2752269,58172897
+2025-01-06,Refund Issued,Credit,1180957,59353854
+2025-01-07,ATM Withdrawal,Debit,2517206,56836648
+2025-01-08,POS Terminal Settlement,Credit,2743623,59580271
+2025-01-09,Maintenance Fee,Debit,2598305,56981966
+2025-01-10,Maintenance Fee,Debit,309435,56672531
+2025-01-11,Wire Transfer - Corporate Client,Debit,1834549,54837982
+2025-01-12,Inventory Purchase - Suppliers,Debit,459445,54378537
+2025-01-13,Online Payment - Wholesale Order,Credit,2807114,57185651
+2025-01-14,Utility Payment,Credit,2475345,59660996
+2025-01-15,Refund Issued,Debit,760533,58900463
+2025-01-16,POS Sales - Bulk Electronics,Debit,1884959,57015504
+2025-01-17,Utility Payment,Debit,911790,56103714
+2025-01-18,Tax Payment,Debit,2780220,53323494
+2025-01-19,ATM Withdrawal,Debit,2601792,50721702
+2025-01-20,ATM Withdrawal,Debit,1199399,49522303
+2025-01-21,POS Terminal Settlement,Credit,2706467,52228770
+2025-01-22,Inventory Purchase - Suppliers,Credit,1687070,53915840
+2025-01-23,Maintenance Fee,Debit,1136484,52779356
+2025-01-24,Wire Transfer - Corporate Client,Debit,2726430,50052926
+2025-01-25,Wire Transfer - Corporate Client,Credit,774097,50827023
+2025-01-26,Inventory Purchase - Suppliers,Debit,612617,50214406
+2025-01-27,Maintenance Fee,Debit,2240807,47973599
+2025-01-28,Refund Issued,Credit,4124611,52098210
+2025-01-29,POS Sales - Bulk Electronics,Debit,619356,51478854
+2025-01-30,Maintenance Fee,Credit,1329454,52808308
+2025-01-31,Online Payment - Wholesale Order,Credit,594238,53402546
+2025-02-01,Maintenance Fee,Credit,1438732,54841278
+2025-02-02,ATM Withdrawal,Debit,543734,54297544
+2025-02-03,Inventory Purchase - Suppliers,Debit,1072756,53224788
+2025-02-04,Refund Issued,Credit,1694111,54918899
+2025-02-05,Tax Payment,Credit,1847899,56766798
+2025-02-06,ATM Withdrawal,Debit,1360084,55406714
+2025-02-07,Refund Issued,Debit,2124678,53282036
+2025-02-08,POS Sales - Bulk Electronics,Debit,1560726,51721310
+2025-02-09,Tax Payment,Debit,1714026,50007284
+2025-02-10,POS Sales - Bulk Electronics,Credit,1451431,51458715
+2025-02-11,Maintenance Fee,Debit,2563872,48894843
+2025-02-12,Online Payment - Wholesale Order,Credit,1824847,50719690
+2025-02-13,ATM Withdrawal,Debit,762504,49957186
+2025-02-14,Tax Payment,Credit,4812199,54769385
+2025-02-15,Refund Issued,Debit,932183,53837202
+2025-02-16,Wire Transfer - Corporate Client,Credit,4492878,58330080
+2025-02-17,Refund Issued,Debit,1501821,56828259
+2025-02-18,POS Sales - Bulk Electronics,Credit,4293619,61121878
+2025-02-19,POS Terminal Settlement,Credit,4431932,65553810
+2025-02-20,Inventory Purchase - Suppliers,Debit,491400,65062410
+2025-02-21,Tax Payment,Debit,449892,64612518
+2025-02-22,Inventory Purchase - Suppliers,Debit,1578223,63034295
+2025-02-23,Tax Payment,Credit,4039246,67073541
+2025-02-24,Online Payment - Wholesale Order,Debit,1344218,65729323
+2025-02-25,Online Payment - Wholesale Order,Credit,2103919,67833242
+2025-02-26,Tax Payment,Debit,1653788,66179454
+2025-02-27,POS Sales - Bulk Electronics,Debit,1693589,64485865
+2025-02-28,Refund Issued,Credit,4377111,68862976
+2025-03-01,ATM Withdrawal,Credit,2088870,70951846
