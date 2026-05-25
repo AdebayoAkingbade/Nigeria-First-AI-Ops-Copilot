@@ -32,7 +32,7 @@ export function BusinessHealthSnapshot({ summary }: BusinessHealthSnapshotProps)
                         <p className="mt-1 text-3xl font-bold">{formatMoney(summary.moneyOut)}</p>
                     </div>
                     <div className={`rounded-3xl p-4 ${summary.netBalance < 0 ? "bg-red-600/20 text-red-50" : "bg-white/10"}`}>
-                        <p className="text-sm text-white/75">Net balance</p>
+                        <p className="text-sm text-white/75">What is left</p>
                         <p className="mt-1 text-3xl font-bold">{formatMoney(summary.netBalance)}</p>
                     </div>
                 </div>
@@ -88,6 +88,12 @@ export function BusinessHealthSnapshot({ summary }: BusinessHealthSnapshotProps)
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                <p>🔒 Your data is secure</p>
+                <span className="h-1 w-1 rounded-full bg-slate-300"></span>
+                <p>🛡️ We don't share your data</p>
+            </div>
         </div>
     );
 }

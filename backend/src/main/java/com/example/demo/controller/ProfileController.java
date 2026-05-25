@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.Profile;
 import com.example.demo.repository.ProfileRepository;
+import com.example.demo.service.EngagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,6 +17,9 @@ public class ProfileController {
 
     @Autowired
     private ProfileRepository profileRepository;
+
+    @Autowired
+    private EngagementService engagementService;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(@AuthenticationPrincipal Jwt jwt) {
@@ -67,9 +71,21 @@ public class ProfileController {
                 if (updatedProfile.getPhone_number() != null) profile.setPhone_number(updatedProfile.getPhone_number());
                 if (updatedProfile.getPlan() != null) profile.setPlan(updatedProfile.getPlan());
                 
+                boolean wasBusinessNameNull = profile.getBusiness_name() == null;
+                if (updatedProfile.getBusiness_name() != null) profile.setBusiness_name(updatedProfile.getBusiness_name());
+                
                 profile.setUpdated_at(java.time.LocalDateTime.now());
                 
                 profileRepository.save(profile);
+
+                // Trigger onboarding message if business name was just set
+                if (wasBusinessNameNull && profile.getBusiness_name() != null) {
+                    try {
+                        engagementService.sendOnboardingMessage(profile);
+                    } catch (Exception e) {
+                        System.err.println("Failed to send onboarding WhatsApp: " + e.getMessage());
+                    }
+                }
                 return ResponseEntity.ok(profile);
             }).orElse(ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {

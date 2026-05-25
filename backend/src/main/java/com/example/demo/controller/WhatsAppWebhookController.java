@@ -1,68 +1,68 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.Profile;
-import com.example.demo.repository.ProfileRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.marketplace.service.MarketplaceChatService;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/webhook/whatsapp")
 public class WhatsAppWebhookController {
 
-    @Autowired
-    private ProfileRepository profileRepository;
+    private final MarketplaceChatService marketplaceChatService;
 
-    @Value("${twilio.account.sid:}")
-    private String twilioAccountSid;
+    @Value("${whatsapp.cloud.verify-token:kudipal-verify-token}")
+    private String verifyToken;
 
-    @Value("${twilio.auth.token:}")
-    private String twilioAuthToken;
+    public WhatsAppWebhookController(MarketplaceChatService marketplaceChatService) {
+        this.marketplaceChatService = marketplaceChatService;
+    }
 
-    @Value("${twilio.whatsapp.number:}")
-    private String twilioWhatsappNumber;
-
-    @Value("${openai.api.key:}")
-    private String openAiApiKey;
-
-    @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<?> receiveWhatsAppMessage(@RequestParam Map<String, String> body) {
-        String from = body.get("From");
-        String messageBody = body.get("Body");
-
-        if (from == null || messageBody == null) {
-            return ResponseEntity.badRequest().body("Invalid Payload");
+    @GetMapping
+    public ResponseEntity<String> verifyWebhook(@RequestParam(name = "hub.mode", required = false) String mode,
+                                                @RequestParam(name = "hub.verify_token", required = false) String token,
+                                                @RequestParam(name = "hub.challenge", required = false) String challenge) {
+        if ("subscribe".equals(mode) && verifyToken.equals(token)) {
+            return ResponseEntity.ok(challenge == null ? "" : challenge);
         }
+        return ResponseEntity.status(403).body("Invalid verify token");
+    }
 
-        System.out.println("Received WhatsApp message from " + from + ": " + messageBody);
-
-        String senderPhone = from.replace("whatsapp:", "");
-
-        // Find user by whatsapp number (requires custom query, but simplified here)
-        // In a real app, we'd add findByWhatsappNumber to ProfileRepository
-        Optional<Profile> profileOpt = profileRepository.findAll().stream()
-                .filter(p -> senderPhone.equals(p.getWhatsapp_number()))
-                .findFirst();
-
-        if (profileOpt.isEmpty()) {
-            System.out.println("Unrecognized user: " + senderPhone);
-            // We would send a Twilio message ignoring for now indicating no connect
+    @PostMapping
+    public ResponseEntity<Void> receiveMessage(@RequestBody JsonNode payload) {
+        JsonNode entries = payload.path("entry");
+        if (!entries.isArray()) {
             return ResponseEntity.ok().build();
         }
 
-        Profile profile = profileOpt.get();
-        
-        // TODO: Call OpenAI API using openAiApiKey and return via Twilio Client
-        System.out.println("Would send response via Twilio to: " + profile.getBusiness_name());
-        
+        for (JsonNode entry : entries) {
+            for (JsonNode change : entry.path("changes")) {
+                JsonNode value = change.path("value");
+                JsonNode messages = value.path("messages");
+                if (!messages.isArray()) {
+                    continue;
+                }
+
+                for (JsonNode message : messages) {
+                    if (!"text".equals(message.path("type").asText())) {
+                        continue;
+                    }
+
+                    String from = message.path("from").asText("");
+                    String body = message.path("text").path("body").asText("");
+                    if (!from.isBlank() && !body.isBlank()) {
+                        marketplaceChatService.handleIncomingText(from, body, payload);
+                    }
+                }
+            }
+        }
+
         return ResponseEntity.ok().build();
     }
 }

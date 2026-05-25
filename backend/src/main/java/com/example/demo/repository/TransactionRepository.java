@@ -14,4 +14,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     @Query("SELECT t FROM Transaction t WHERE t.user_id = :userId ORDER BY t.transaction_date DESC, t.created_at DESC")
     List<Transaction> findByUserId(@Param("userId") UUID userId);
+
+    @Query("SELECT t FROM Transaction t WHERE t.user_id = :userId AND t.transaction_date BETWEEN :startDate AND :endDate ORDER BY t.transaction_date DESC")
+    List<Transaction> findByUserIdAndDateRange(@Param("userId") UUID userId, @Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 }
